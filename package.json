@@ -1,5 +1,5 @@
 {
-  "name": "get-color-contrast",
+  "name": "get-contrast",
   "version": "0.0.2",
   "description": "Get the contrast ratio and WCAG score between common CSS color types.",
   "main": "index.js",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/johnotander/get-color-contrast.git"
+    "url": "https://github.com/johnotander/get-contrast.git"
   },
   "keywords": [
     "wcag",
@@ -22,9 +22,9 @@
   "author": "John Otander <johnotander@gmail.com> (http://johnotander.com/)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/johnotander/get-color-contrast/issues"
+    "url": "https://github.com/johnotander/get-contrast/issues"
   },
-  "homepage": "https://github.com/johnotander/get-color-contrast",
+  "homepage": "https://github.com/johnotander/get-contrast",
   "dependencies": {
     "is-blank": "0.0.1",
     "rgb": "^0.1.0",

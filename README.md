@@ -1,6 +1,6 @@
-# Get Color Contrast
+# Get Contrast
 
-[![Build Status](https://travis-ci.org/johnotander/get-color-contrast.svg?branch=master)](https://travis-ci.org/johnotander/get-color-contrast)
+[![Build Status](https://travis-ci.org/johnotander/get-contrast.svg?branch=master)](https://travis-ci.org/johnotander/get-contrast)
 
 Get the contrast ratio and WCAG score between common CSS color types. This also includes an is
 accessible method that returns a boolean value based on
@@ -9,13 +9,13 @@ accessible method that returns a boolean value based on
 ## Installation
 
 ```
-npm i --save get-color-contrast
+npm i --save get-contrast
 ```
 
 ## Usage
 
 ```javascript
-var contrast = require('get-color-contrast');
+var contrast = require('get-contrast');
 
 contrast.ratio('#fafafa', 'rgba(0,0,0,.75)') // => 10
 contrast.score('#fafafa', 'rgba(0,0,0,.75)') // => 'AAA'
