@@ -2,8 +2,6 @@
 
 [![Build Status](https://travis-ci.org/johnotander/get-contrast.svg?branch=master)](https://travis-ci.org/johnotander/get-contrast)
 
-__Currently under development.__
-
 Get the contrast ratio and WCAG score between common CSS color types. This also includes an is
 accessible method that returns a boolean value based on
 [W3C Accessibility Standards](http://www.w3.org/TR/WCAG20/#visual-audio-contrast-contrast).
