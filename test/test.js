@@ -18,7 +18,7 @@ describe('score', function() {
 describe('isAccessible', function() {
 
   it('should determine that a contrast is inaccessible when the ratio is below 4.5:1', function() {
-    assert.ok(!contrast.isAccessible('#fafafa', '#fff'));
+    assert.equal(contrast.isAccessible('#fafafa', '#fff'), false);
   });
 
   it('should determine that a contrast is accesible when the ratio is above 4.5:1', function() {
