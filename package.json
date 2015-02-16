@@ -6,6 +6,9 @@
   "directories": {
     "test": "test"
   },
+  "bin": {
+    "contrast": "./cli.js"
+  },
   "scripts": {
     "test": "mocha test"
   },
