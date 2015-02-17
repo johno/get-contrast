@@ -23,6 +23,26 @@ contrast.isAccessible('#fafafa', 'rgba(0,0,0,.75)') // => true
 contrast.isAccessible('#fafafa', '#fff') // => false
 ```
 
+## CLI
+
+This module includes a command line interface `contrast`. 
+```sh
+$ npm i get-contrast -g
+$ contrast "#000" "#fff"
+Ratio: 21
+Score: AAA
+# The second parameter defaults to #fff
+$ contrast white
+Ratio: 1
+Score: F
+The contrast is not accessible.
+# Contrast will exit with an error code, when the values are not accessible.
+$ contrast "#ff0" "#fff" && ./deploy.sh
+Ratio: 1.0738392309265699
+Score: F
+The contrast is not accessible.
+```
+
 ## Acknowledgements
 
 Uses the following packages:
