@@ -1,10 +1,10 @@
-# Get Contrast
-
-[![Build Status](https://travis-ci.org/johnotander/get-contrast.svg?branch=master)](https://travis-ci.org/johnotander/get-contrast)
+# get-contrast [![Build Status](https://travis-ci.org/johnotander/get-contrast.svg?branch=master)](https://travis-ci.org/johnotander/get-contrast)
 
 Get the contrast ratio and WCAG score between common CSS color types. This also includes an is
 accessible method that returns a boolean value based on
 [W3C Accessibility Standards](http://www.w3.org/TR/WCAG20/#visual-audio-contrast-contrast).
+
+It has the ability to handle rgb, rgba, hex, hsl, hsla, and named CSS colors.
 
 ## Installation
 
@@ -21,6 +21,7 @@ contrast.ratio('#fafafa', 'rgba(0,0,0,.75)') // => 10
 contrast.score('#fafafa', 'rgba(0,0,0,.75)') // => 'AAA'
 contrast.isAccessible('#fafafa', 'rgba(0,0,0,.75)') // => true
 contrast.isAccessible('#fafafa', '#fff') // => false
+contrast.score('rebeccapurple', 'tomato') // => 'F'
 ```
 
 ## CLI
