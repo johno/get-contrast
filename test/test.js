@@ -6,6 +6,10 @@ describe('ratio', function() {
   it('should calculate the correct ratio', function() {
     assert.equal(Math.round(contrast.ratio('#fafafa', 'rgba(0,0,0,.75)')), 20);
   });
+
+  it('should be able to handle named CSS colors', function() {
+    assert.ok(contrast.ratio('tomato', 'rebeccapurple'));
+  });
 });
 
 describe('score', function() {

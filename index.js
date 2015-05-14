@@ -1,6 +1,8 @@
 var rgb = require('rgb');
 var wcag = require('wcag-contrast');
 var isBlank = require('is-blank');
+var isNamedCssColor = require('is-named-css-color');
+var cssColorNames = require('css-color-names');
 
 module.exports.ratio = ratio;
 module.exports.score = score;
@@ -30,6 +32,10 @@ function isAccessible(colorOne, colorTwo) {
 function getRgbTriplet(color) {
   if (typeof color != 'string') {
     throw new TypeError('get-contrast expects colors as strings');
+  }
+
+  if (isNamedCssColor(color)) {
+    color = cssColorNames[color];
   }
 
   return rgb(color).match(/\((.*)\)/)[1].split(',').slice(0, 3);
