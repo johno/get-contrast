@@ -1,6 +1,6 @@
 {
   "name": "get-contrast",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Get the contrast ratio and WCAG score between common CSS color types.",
   "main": "index.js",
   "directories": {
@@ -29,7 +29,9 @@
   },
   "homepage": "https://github.com/johnotander/get-contrast",
   "dependencies": {
+    "css-color-names": "0.0.1",
     "is-blank": "0.0.1",
+    "is-named-css-color": "0.0.1",
     "rgb": "^0.1.0",
     "wcag-contrast": "0.0.0"
   },
