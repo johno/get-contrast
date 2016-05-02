@@ -40,3 +40,29 @@ describe('getRgbTriplet', function() {
     assert.throws(contrast.ratio);
   });
 });
+
+describe('isNotTransparent', function() {
+  it('should throw an error when one or more color is transparent', function() {
+    // Several test assertions for different styles of 'transparent'.
+    assert.throws(function() {
+      // Transparent white rgba.
+      contrast.isNotTransparent('rgba(255,255,255,0)');
+    },
+    /get-contrast cannot contrast transparent colors/);
+    // Transparent hsl.
+    assert.throws(function() {
+      contrast.isNotTransparent('hsl(100,100,100,0)');
+    },
+    /get-contrast cannot contrast transparent colors/);
+    // Transparent named color.
+    assert.throws(function() {
+      contrast.isNotTransparent('transparent');
+    },
+    /get-contrast cannot contrast transparent colors/);
+    // Transparent hex.
+    assert.throws(function() {
+      contrast.isNotTransparent('#FFFFFF00');
+    },
+    /get-contrast cannot contrast transparent colors/);
+  });
+});

@@ -7,6 +7,7 @@ var cssColorNames = require('css-color-names');
 module.exports.ratio = ratio;
 module.exports.score = score;
 module.exports.isAccessible = isAccessible;
+module.exports.isNotTransparent = isNotTransparent;
 
 function ratio(colorOne, colorTwo) {
   colorOne = getRgbTriplet(colorOne);
@@ -38,5 +39,18 @@ function getRgbTriplet(color) {
     color = cssColorNames[color];
   }
 
-  return rgb(color).match(/\((.*)\)/)[1].split(',').slice(0, 3);
+  color = isNotTransparent(color);
+  return color.match(/\((.*)\)/)[1].split(',').slice(0, 3);
+}
+
+function isNotTransparent(color) {
+  // Convert to RGB.
+  color = rgb(color);
+  // Check if the rgb returned color is rgba and if the 'a' value is 0.
+  var cArray = color.match(/\((.*)\)/)[1].split(',');
+  if (cArray.length == 4 && cArray[3] == '0') {
+    throw new TypeError('get-contrast cannot contrast transparent colors');
+  } else {
+    return color;
+  }
 }
