@@ -1,5 +1,5 @@
 var assert = require('assert');
-var contrast = require('..');
+var contrast = require('./');
 
 describe('ratio', function() {
 

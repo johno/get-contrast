@@ -15,7 +15,7 @@ npm i --save get-contrast
 ## Usage
 
 ```javascript
-var contrast = require('get-contrast');
+var contrast = require('get-contrast')
 
 contrast.ratio('#fafafa', 'rgba(0,0,0,.75)') // => 10
 contrast.score('#fafafa', 'rgba(0,0,0,.75)') // => 'AAA'
