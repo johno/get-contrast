@@ -64,5 +64,8 @@ describe('isNotTransparent', function() {
       contrast.isNotTransparent('#FFFFFF00');
     },
     /get-contrast cannot contrast transparent colors/);
+
+    // Does not throw when told to ignore
+    assert.ok(contrast.isNotTransparent('rgba(0, 0, 0, 0)', { ignoreAlpha: true }));
   });
 });

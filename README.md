@@ -24,6 +24,10 @@ contrast.isAccessible('#fafafa', '#fff') // => false
 contrast.score('rebeccapurple', 'tomato') // => 'F'
 ```
 
+#### Options
+
+- `ignoreAlpha` (default: `false`) - Don't raise an error when transparent values are passed (`rgba(0, 0, 0, 0)`)
+
 ## CLI
 
 This module includes a command line interface `contrast`. 
