@@ -1,0 +1,59 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=Edge"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title></title><style>@media (min-width: 40em){}.heading_m8b62{font-size:48px !important;}@media screen and (min-width: 52em){.heading_m8b62{font-size:72px !important;}}.heading_cjymi6{font-size:24px !important;}@media screen and (min-width: 52em){.heading_cjymi6{font-size:null !important;}}.button_1x74jdy:hover{box-shadow:inset 0 0 0 999px rgba(0, 0, 0, .125) !important;}</style></head><body style="margin:0;"><div class="Xv" style="font-family:-apple-system, BlinkMacSystemFont, sans-serif;font-weight:400;line-height:1.5;color:#111;background-color:#fff;"><nav style="position:absolute;top:0;right:0;left:0;display:flex;align-items:center;padding-top:8px;padding-bottom:8px;padding-left:32px;padding-right:32px;color:#fff;"><a href="https://github.com/johnotander/get-contrast" class="Link" style="box-sizing:border-box;color:inherit;font-size:14px;font-weight:600;text-decoration:none;margin-right:8px;">GitHub</a><a href="https://npmjs.com/package/get-contrast" class="Link" style="box-sizing:border-box;color:inherit;font-size:14px;font-weight:600;text-decoration:none;margin-right:8px;">npm</a></nav><header style="display:flex;align-items:center;justify-content:center;text-align:left;min-height:100vh;padding-top:48px;padding-bottom:48px;padding-left:32px;padding-right:32px;color:white;background-color:#111;background-image:url(undefined);background-size:cover;background-position:center;" class="root_1m3afkj"><div style="max-width:1024px;flex:1 1 auto;"><h1 class="heading_m8b62" style="box-sizing:border-box;font-weight:600;line-height:1.25;h0:[object Object];h1:[object Object];h2:[object Object];h3:[object Object];h4:[object Object];h5:[object Object];h6:[object Object];margin:0;">get-contrast</h1><h2 class="heading_cjymi6" style="box-sizing:border-box;font-weight:600;line-height:1.25;h0:[object Object];h1:[object Object];h2:[object Object];h3:[object Object];h4:[object Object];h5:[object Object];h6:[object Object];margin:0;">Get the contrast ratio and WCAG score between common CSS color types in order to ensure accessibility</h2><p class="Text" style="box-sizing:border-box;font-size:20px;margin:0;">v2.0.0</p><div style="box-sizing:border-box;margin-left:-16px;margin-right:-16px;"><a href="https://twitter.com/intent/tweet?text=get-contrast%253A%2520Get%2520the%2520contrast%2520ratio%2520and%2520WCAG%2520score%2520between%2520common%2520CSS%2520color%2520types%2520in%2520order%2520to%2520ensure%2520accessibility&amp;url=" class="button_1x74jdy" style="box-sizing:border-box;font-family:inherit;font-size:inherit;font-weight:600;display:inline-block;margin:16px;padding-top:8px;padding-bottom:8px;padding-left:16px;padding-right:16px;border:0;cursor:pointer;border-radius:2px;color:#fff;background-color:#08e;text-decoration:none;hover:[object Object];">Tweet</a><div style="display:table;clear:both;"></div></div></div></header><div style="box-sizing:border-box;max-width:1024px;margin-left:auto;margin-right:auto;padding-top:32px;padding-bottom:32px;padding-left:32px;padding-right:32px;"><article style="box-sizing:border-box;"><style>.Prose{}.Prose h1, .Prose h2, .Prose h3, .Prose h4, .Prose h5, .Prose h6{}.Prose h1{}.Prose h2{}.Prose h3{}.Prose h4{}.Prose h5{}.Prose h6{}.Prose p{}.Prose a{color: #08e;}</style><div>
+<p>Get the contrast ratio and WCAG score between common CSS color types. This also includes an is
+accessible method that returns a boolean value based on
+<a href="http://www.w3.org/TR/WCAG20/#visual-audio-contrast-contrast">W3C Accessibility Standards</a>.</p>
+<p>It has the ability to handle rgb, rgba, hex, hsl, hsla, and named CSS colors.</p>
+<h2 id="installation">Installation</h2>
+<pre><code>npm i --save get-contrast
+</code></pre><h2 id="usage">Usage</h2>
+<pre><code class="lang-javascript">var contrast = require(&apos;get-contrast&apos;)
+
+contrast.ratio(&apos;#fafafa&apos;, &apos;rgba(0,0,0,.75)&apos;) // =&gt; 10
+contrast.score(&apos;#fafafa&apos;, &apos;rgba(0,0,0,.75)&apos;) // =&gt; &apos;AAA&apos;
+contrast.isAccessible(&apos;#fafafa&apos;, &apos;rgba(0,0,0,.75)&apos;) // =&gt; true
+contrast.isAccessible(&apos;#fafafa&apos;, &apos;#fff&apos;) // =&gt; false
+contrast.score(&apos;rebeccapurple&apos;, &apos;tomato&apos;) // =&gt; &apos;F&apos;
+</code></pre>
+<h4 id="options">Options</h4>
+<ul>
+<li><code>ignoreAlpha</code> (default: <code>false</code>) - Don&apos;t raise an error when transparent values are passed (<code>rgba(0, 0, 0, 0)</code>)</li>
+</ul>
+<h2 id="cli">CLI</h2>
+<p>This module includes a command line interface <code>contrast</code>. </p>
+<pre><code class="lang-sh">$ npm i get-contrast -g
+$ contrast &quot;#000&quot; &quot;#fff&quot;
+Ratio: 21
+Score: AAA
+# The second parameter defaults to #fff
+$ contrast white
+Ratio: 1
+Score: F
+The contrast is not accessible.
+# Contrast will exit with an error code, when the values are not accessible.
+$ contrast &quot;#ff0&quot; &quot;#fff&quot; &amp;&amp; ./deploy.sh
+Ratio: 1.0738392309265699
+Score: F
+The contrast is not accessible.
+</code></pre>
+<h2 id="acknowledgements">Acknowledgements</h2>
+<p>Uses the following packages:</p>
+<ul>
+<li><a href="https://github.com/kamicane/rgb">https://github.com/kamicane/rgb</a></li>
+<li><a href="https://github.com/tmcw/wcag-contrast">https://github.com/tmcw/wcag-contrast</a></li>
+</ul>
+<p>Inspired by:</p>
+<ul>
+<li><a href="https://leaverou.github.com/contrast-ratio">https://leaverou.github.com/contrast-ratio</a></li>
+</ul>
+<h2 id="license">License</h2>
+<p>MIT</p>
+<h2 id="contributing">Contributing</h2>
+<ol>
+<li>Fork it</li>
+<li>Create your feature branch (<code>git checkout -b my-new-feature</code>)</li>
+<li>Commit your changes (<code>git commit -am &apos;Add some feature&apos;</code>)</li>
+<li>Push to the branch (<code>git push origin my-new-feature</code>)</li>
+<li>Create new Pull Request</li>
+</ol>
+<p>Crafted with &lt;3 by <a href="http://johnotander.com">John Otander</a> (<a href="https://twitter.com/4lpine">@4lpine</a>).</p>
+</div></article></div><footer style="padding-top:16px;padding-bottom:16px;padding-left:32px;padding-right:32px;margin-top:16px;border-color:#ddd;border-top-style:solid;border-top-width:1px;"><div><a href="https://github.com/johnotander/get-contrast" class="Link" style="box-sizing:border-box;color:inherit;margin-right:16px;">GitHub</a><a href="https://github.com/johnotander" class="Link" style="box-sizing:border-box;color:inherit;margin-right:16px;">johnotander</a></div><div></div></footer></div><div style="font-family:-apple-system, sans-serif;font-size:12px;font-weight:600;text-align:right;padding:8px;padding-right:32px;color:#fff;background-color:#000;"><a href="//compositor.io" style="color:inherit;text-decoration:none;">Built with Compositor.io</a></div></body></html>
