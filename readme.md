@@ -2,8 +2,7 @@
 
 Get the contrast ratio and WCAG score for two colors based on
 [W3C Accessibility Standards](http://www.w3.org/TR/WCAG20/#visual-audio-contrast-contrast).
-
-It has the ability to handle rgb, rgba, hex, hsl, hsla, and named CSS colors.
+It handles rgb, rgba, hex, hsl, hsla, and named CSS colors.
 
 ## Installation
 

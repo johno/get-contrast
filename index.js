@@ -30,10 +30,12 @@ function isAccessible(colorOne, colorTwo, options) {
   return ratio(colorOne, colorTwo, options) > 4.5;
 }
 
-function getRgbTriplet(color, options) {
-  if (typeof color !== "string") {
+function getRgbTriplet(providedColor, options) {
+  if (typeof providedColor !== "string") {
     throw new TypeError("get-contrast expects colors as strings");
   }
+
+  let color = providedColor.toLowerCase()
 
   if (isNamedCssColor(color)) {
     color = cssColorNames[color];
