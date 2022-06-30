@@ -1,6 +1,6 @@
 {
   "name": "get-contrast",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Get the contrast ratio and WCAG score between common CSS color types.",
   "main": "index.js",
   "files": [
