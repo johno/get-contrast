@@ -89,3 +89,68 @@ r.ranked;        // every candidate, best first, each with its full check() resu
 - APCA metadata (listed as optional in the roadmap) is not included yet; the
   APCA model is waiting on a licensing decision (see issue #43). Adding it later
   only adds fields.
+
+## `find(color, against, options?)` and `fix(foreground, background, options?)`
+
+"This pair fails; what is the smallest sensible change that makes it pass?"
+`fix` is a convenience wrapper over `find`: one solver, two spellings.
+
+```js
+const { fix } = require("get-contrast");
+
+const r = fix("#ffcc00", "#ffffff");           // adjust the foreground (default)
+r.reached;                 // true: the suggestion meets the target
+r.suggested.css;           // "#917300", ready to paste
+r.suggested.check.ratioText; // "4.51:1": a full check() of the suggested pair
+r.original.check;          // the check() of the pair as given
+r.change.deltaE;           // 0.30: perceptual distance (OKLab; black to white = 1)
+r.change.dimensions;       // ["lightness", "chroma"]
+r.notes;                   // "chroma-reduced-for-gamut": the original chroma does not fit sRGB that dark
+```
+
+`fix(fg, bg, { change: "background" })` adjusts the background instead.
+`find(color, against, { role })` adjusts `color`, treated as the foreground
+(default) or the background.
+
+### How it searches
+
+- The search runs in **OKLCH**, so equal steps look equal. By default only
+  **lightness** moves: chroma and hue stay. Hue is never rotated; moving
+  lightness toward 0 or 1 always reaches black or white, so no hue can do better
+  than lightness alone, and rotating hue only adds change.
+- If the wanted chroma does not fit the target gamut at some lightness, chroma is
+  reduced just enough to fit (hue and lightness kept) and a `chroma-reduced-for-gamut`
+  note says so. Nothing is clamped silently.
+- `preserveChroma: false` lets the solver also lower chroma when that reaches
+  the target with less overall change (`chroma-reduced-to-reach-target`).
+- The boundary is found with a scan plus bisection and the answer is the
+  **passing** side, so the target is met conservatively. The result is then
+  serialized (8-bit hex for sRGB), parsed back, and re-checked: `suggested.css`
+  is exactly what you will deploy, and it passes. Translucent colors keep their alpha.
+- `direction: "auto"` (default) takes whichever of darker or lighter changes the
+  color less (ties go darker); `"darker"` / `"lighter"` restrict it.
+
+### Options
+
+`level`, `use`, `minRatio`, `backdrop` (as in `check()`), plus:
+
+| Option | Meaning |
+| --- | --- |
+| `direction` | `"auto"` (default), `"darker"`, `"lighter"` |
+| `preserveChroma` | Keep chroma where the gamut allows (default `true`) |
+| `gamut` | `"srgb"` (default) or `"display-p3"`: the gamut the result must be in |
+| `maxChange` | Largest allowed OKLab distance. Beyond it the target is reported as not reached |
+| `change` (`fix`) / `role` (`find`) | Which color may change |
+
+### Never a fake success
+
+`reached` is only `true` when the serialized suggestion passes a fresh
+`check()`. Otherwise `limitedBy` says why: `"unreachable"` (no color of this
+hue can meet the target against the other color, or alpha caps the contrast) or
+`"max-change"` (the target is reachable but needs more than `maxChange`). In
+both cases `suggested` is the best contrast the constraints allow, or `null` if
+nothing improves, and a note explains. If the pair already passes, nothing
+changes (`changed: false`, `already-passes`).
+
+APCA before/after (listed as optional in the roadmap) is not included yet; see
+issue #43.
