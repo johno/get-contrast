@@ -6,7 +6,7 @@ const { spawnSync } = require("node:child_process");
 
 const root = path.join(__dirname, "..");
 
-// The package entry points load dist/ and cli-run.js, which are build output. Make sure
+// The package entry points load dist/ and cli-src/, which are build output. Make sure
 // they exist so these tests also work when run directly with `bun test`.
 require("../scripts/ensure-build");
 
