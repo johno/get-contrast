@@ -108,9 +108,14 @@ describe("generated declarations", () => {
   });
 
   test("library source has no Bun- or Node-only APIs", () => {
-    for (const f of fs.readdirSync(path.join(root, "src"))) {
-      const src = fs.readFileSync(path.join(root, "src", f), "utf8");
-      expect(src).not.toMatch(/\bBun\b|from ["']node:|require\(["']node:/);
+    const walk = (dir) =>
+      fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+        e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]
+      );
+    const files = walk(path.join(root, "src"));
+    expect(files.length).toBeGreaterThan(5);
+    for (const file of files) {
+      expect(fs.readFileSync(file, "utf8")).not.toMatch(/\bBun\b|from ["']node:|require\(["']node:/);
     }
   });
 });
