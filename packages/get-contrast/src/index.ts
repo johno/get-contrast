@@ -15,6 +15,8 @@ export type {
   WcagResult,
   WcagUse,
 } from "./wcag.js";
+export { pick } from "./pick.js";
+export type { PickCandidate, PickOptions, PickReasonCode, PickResult, RankedCandidate } from "./pick.js";
 export { parseColor } from "./color/parse.js";
 export type { Color, ColorSpace } from "./color/model.js";
 export type { ParseError, ParseErrorCode, ParseResult } from "./color/parse-result.js";
