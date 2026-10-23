@@ -16,6 +16,7 @@
 //    color is serialized (8-bit hex for sRGB), parsed back, and re-checked, so
 //    what the caller gets is what they will deploy, and it passes.
 import { convert, isInGamut, type Gamut } from "./color/convert.js";
+import { deltaEOk } from "./color/distance.js";
 import { clamp, createColor, normalizeHue, type Color } from "./color/model.js";
 import { parseColor } from "./color/parse.js";
 import { resolveColor, type ColorInput } from "./input.js";
@@ -124,11 +125,7 @@ function oklch(color: Color): OklchValues {
   return { l, c, h };
 }
 
-function deltaE(a: Color, b: Color): number {
-  const x = convert(a, "oklab").coords;
-  const y = convert(b, "oklab").coords;
-  return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
-}
+const deltaE = deltaEOk;
 
 /** Largest chroma <= `chroma` that fits `gamut` at this lightness and hue. */
 function fitChroma(l: number, chroma: number, hue: number, gamut: Gamut): number {

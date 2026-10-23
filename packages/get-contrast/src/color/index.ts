@@ -4,3 +4,4 @@ export * from "./parse-result.js";
 export { parseColor } from "./parse.js";
 export * from "./convert.js";
 export { toHex } from "./format.js";
+export { deltaEOk } from "./distance.js";

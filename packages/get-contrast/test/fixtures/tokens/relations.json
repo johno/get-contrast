@@ -1,0 +1,9 @@
+{
+  "relations": [
+    "text.default -> surface.default",
+    "text.secondary -> surface.default",
+    "text.muted -> surface.default",
+    { "foreground": "text.subtle", "background": "surface.raised", "name": "subtle caption", "use": "large-text" },
+    ["button.text", "button.background"]
+  ]
+}

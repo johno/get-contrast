@@ -119,6 +119,7 @@ describe("documented JSON shapes are stable", () => {
     "fix-unchanged": ["fix", "#000", "#fff"],
     "fix-unreachable": ["fix", "#999", "#777", "--level", "AAA"],
     "audit-palette": { args: ["audit", "-"], input: '{"ink":"#111","paper":"#fff","white":"white","translucent":"rgb(0 0 0 / .5)"}' },
+    "tokens-fail": { args: ["tokens", "-", "--relations", path.join(__dirname, "..", "..", "get-contrast", "test", "fixtures", "tokens", "relations.json")], input: fs.readFileSync(path.join(__dirname, "..", "..", "get-contrast", "test", "fixtures", "tokens", "tokens.json"), "utf8") },
     "error-input": ["check", "nope", "#fff"],
     "error-usage": ["check", "#000"],
   };

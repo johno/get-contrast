@@ -27,6 +27,36 @@ export type {
   OklchValues,
   SolveDirection,
 } from "./solve.js";
+export {
+  auditTokens,
+  parseRelations,
+  parseTokens,
+  resolveToken,
+  toJsonPatch,
+  RelationError,
+  TokenSourceError,
+} from "./tokens/index.js";
+export type {
+  AuditTokensOptions,
+  EditVerification,
+  ExistingSuggestion,
+  Relation,
+  RelationInput,
+  RelationResult,
+  Resolution,
+  SynthesizedSuggestion,
+  TokenAuditNote,
+  TokenAuditResult,
+  TokenDefinition,
+  TokenEdit,
+  TokenFormat,
+  TokenIssue,
+  TokenIssueCode,
+  TokenReference,
+  TokenSet,
+  TokenSource,
+  TokenSuggestion,
+} from "./tokens/index.js";
 export { audit } from "./audit.js";
 export type {
   AuditColor,

@@ -1,4 +1,4 @@
-const COMMANDS = ["check", "wcag", "pick", "find", "fix", "audit", "matrix"];
+const COMMANDS = ["check", "wcag", "pick", "find", "fix", "audit", "matrix", "tokens"];
 
 const COLOR_FLAGS = `  --json                 Print one JSON document (the library's result) instead of a report
   --quiet                Print nothing; the exit code is the result (not with --json)
@@ -110,6 +110,36 @@ ${TARGET_FLAGS}
   --max-colors N         Refuse palettes with more unique colors (default 200)
 ${COLOR_FLAGS}`,
 
+  tokens: `Usage: contrast tokens <tokens-file | -> --relations <relations.json> [options]
+
+Audit design tokens against explicit foreground/background relationships and
+get reviewable fixes. Nothing is written: suggestions are printed (and, with
+--json, returned as edits plus an RFC 6902 patch for JSON token files).
+
+Tokens: JSON (nested objects; "$value" or "value"; aliases like "{color.gray.500}")
+or CSS custom properties (var(--x) references). Relations: a JSON array (or
+{ "relations": [...] }) of "text.default -> surface.default" strings,
+[foreground, background] pairs, or objects with optional name, level, use,
+minRatio, candidates.
+
+For a failing relation, the nearest EXISTING token that meets the target is
+suggested first (searched among the foreground token's own namespace, e.g.
+text.*, unless you pass --candidates); only if none qualifies is a new color
+synthesized. Exits 0 if all relations pass, 1 if some fail, 2 if a token cannot
+be resolved or the input is invalid.
+
+Options:
+  --relations FILE       The relationships to audit (required)
+  --format json|css      Token format (default: from the file extension, else sniffed)
+  --scope SELECTOR       CSS only: audit a scope, e.g. '[data-theme=dark]' or
+                         '@media (prefers-color-scheme: dark)' (default :root)
+  --candidates GLOBS     Comma-separated token-name globs to search for replacements
+${TARGET_FLAGS}
+${COLOR_FLAGS}
+
+Example:
+  contrast tokens tokens.json --relations relations.json --level AA`,
+
   fix: `Usage: contrast fix <foreground> <background> [options]
 
 Like "find", for a foreground/background pair: suggests the smallest change to
@@ -142,6 +172,7 @@ Commands:
   fix <fg> <bg>                     Same, for a foreground/background pair
   audit <palette.json | ->          Audit a palette: failing pairs, best colors
   matrix <palette.json | ->         All-pairs contrast matrix
+  tokens <file | -> --relations f   Audit design tokens and suggest fixes
   help [command]                    Show help
 
 Run "contrast help <command>" for options. Exit codes: 0 success or target met,

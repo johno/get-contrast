@@ -9,7 +9,13 @@ const { readPalette, InputError } = require("./palette-input");
 
 const EXIT = Object.freeze({ OK: 0, NOT_MET: 1, USAGE: 2, FAILURE: 3 });
 
-class UsageError extends Error {}
+class UsageError extends Error {
+  /** @param {string} message @param {string} [code] error.code in --json output */
+  constructor(message, code = "usage") {
+    super(message);
+    this.code = code;
+  }
+}
 
 const SHARED = {
   color: { name: "color", type: "boolean" },
@@ -36,6 +42,14 @@ const PALETTE = {
 };
 
 const SPECS = {
+  tokens: {
+    ...SHARED,
+    ...TARGET,
+    relations: { name: "relations", type: "string" },
+    format: { name: "format", type: "string", values: ["json", "css"] },
+    scope: { name: "scope", type: "string" },
+    candidates: { name: "candidates", type: "string" },
+  },
   audit: {
     ...SHARED,
     ...TARGET,
@@ -357,4 +371,101 @@ function matrix(lib, parsed, ctx) {
   };
 }
 
-module.exports = { EXIT, UsageError, SPECS, COMMANDS: { check, wcag, pick, find, fix, audit, matrix } };
+// -- tokens ------------------------------------------------------------------
+
+function tokens(lib, { positionals, flags }, ctx) {
+  needs(positionals, 1, "contrast tokens <tokens-file | -> --relations <relations.json>");
+  if (!flags.relations) {
+    throw new UsageError("tokens needs --relations <file>: a JSON list of foreground/background token pairs, e.g. [\"text.default -> surface.default\"]");
+  }
+  if (flags.relations === "-" && positionals[0] === "-") throw new UsageError("only one of the tokens file and --relations can be read from stdin");
+
+  const read = (spec) => (spec === "-" ? ctx.readStdin() : ctx.readFile(spec));
+  const readText = (spec, what) => {
+    try {
+      return read(spec);
+    } catch (error) {
+      if (error instanceof UsageError) throw error;
+      const why = error && error.code === "ENOENT" ? "no such file" : error && error.code === "EISDIR" ? "is a directory" : error.message;
+      throw new UsageError(`cannot read ${what} ${spec}: ${why}`);
+    }
+  };
+
+  const tokenSource = positionals[0];
+  const tokenText = readText(tokenSource, "tokens");
+  const format = flags.format || (/\.css$/i.test(tokenSource) ? "css" : /\.json$/i.test(tokenSource) ? "json" : undefined);
+  let set;
+  try {
+    set = lib.parseTokens(tokenText, { format, scope: flags.scope });
+  } catch (error) {
+    if (lib.TokenSourceError && error instanceof lib.TokenSourceError) throw new UsageError(`${tokenSource === "-" ? "stdin" : tokenSource}: ${error.message}`, "invalid-tokens");
+    throw error;
+  }
+
+  const relationsText = readText(flags.relations, "relations");
+  let relations;
+  try {
+    let data;
+    try {
+      data = JSON.parse(relationsText);
+    } catch (error) {
+      throw new UsageError(`${flags.relations}: not valid JSON: ${error.message}`, "invalid-relations");
+    }
+    relations = lib.parseRelations(data);
+  } catch (error) {
+    if (lib.RelationError && error instanceof lib.RelationError) throw new UsageError(`${flags.relations}: ${error.message}`, "invalid-relations");
+    throw error;
+  }
+
+  const options = targetOptions(flags);
+  if (flags.candidates) options.candidates = flags.candidates.split(",").map((g) => g.trim()).filter(Boolean);
+  const r = lib.auditTokens(set, relations, options);
+  const exitCode = r.summary.error ? EXIT.USAGE : r.summary.fail ? EXIT.NOT_MET : EXIT.OK;
+
+  return {
+    result: r,
+    patch: lib.toJsonPatch(r.edits),
+    exitCode,
+    human(out, style) {
+      const s = r.summary;
+      out(`${style.bold(`${s.relations} relation${s.relations === 1 ? "" : "s"}`)} over ${set.tokens.length} ${r.format} tokens: ${style.pass(`${s.pass} pass`)}, ${s.fail ? style.fail(`${s.fail} fail`) : "0 fail"}${s.error ? `, ${style.red(`${s.error} error${s.error === 1 ? "" : "s"}`)}` : ""}`);
+      out("");
+      for (const rel of r.relations) {
+        if (rel.status === "pass") {
+          out(`${style.pass("PASS")}  ${rel.name}  ${rel.ratioText}  ${style.dim(`(needs ${rel.target.threshold}:1)`)}`);
+        } else if (rel.status === "fail") {
+          out(`${style.fail("FAIL")}  ${rel.name}  ${rel.ratioText}  ${style.dim(`(needs ${rel.target.threshold}:1)`)}`);
+          out(`      ${style.dim(`${rel.foreground.token} ${rel.foreground.hex} on ${rel.background.token} ${rel.background.hex}`)}`);
+          const sug = rel.suggestion;
+          if (sug.existing) {
+            out(`      Use existing token ${style.bold(sug.existing.token)} (${sug.existing.hex}): ${sug.existing.ratioText}, change ${sug.existing.deltaE.toFixed(2)}`);
+            if (sug.alternatives.length) out(`      ${style.dim(`also qualifying: ${sug.alternatives.map((a) => a.token).join(", ")}`)}`);
+          } else if (sug.recommended === "synthesized") {
+            out(`      No existing token fits (${sug.searched.considered} considered in ${sug.searched.pattern.join(", ")}).`);
+            out(`      Suggested new value ${style.bold(sug.synthesized.css)}: ${sug.synthesized.ratioText}, change ${sug.synthesized.deltaE.toFixed(2)}`);
+          } else {
+            out(`      ${style.red("No fix available.")} ${sug.reason}`);
+          }
+          if (sug.existing && sug.synthesized && sug.synthesized.reached && sug.synthesized.deltaE < sug.existing.deltaE) {
+            out(`      ${style.dim(`(a new color ${sug.synthesized.css} would change less: ${sug.synthesized.deltaE.toFixed(2)})`)}`);
+          }
+        } else {
+          out(`${style.red("ERROR")} ${rel.name}`);
+          for (const issue of rel.issues) out(`      ${issue.message}`);
+        }
+      }
+      if (r.edits.length) {
+        out("");
+        out(style.bold("Suggested edits (nothing was changed; review before applying)"));
+        for (const edit of r.edits) {
+          const where = edit.source.format === "json" ? edit.source.pointer : `${edit.source.property} in ${edit.source.selector}`;
+          out(`  ${edit.token}: ${edit.from} -> ${style.bold(edit.to)}  ${style.dim(`[${where}]`)}`);
+        }
+        if (r.format === "json") out(style.dim("  --json also emits these as an RFC 6902 patch."));
+      }
+      for (const note of r.notes) out(`${style.yellow("note")} ${note.message}`);
+    },
+  };
+}
+
+module.exports = { EXIT, UsageError, SPECS, COMMANDS: { check, wcag, pick, find, fix, audit, matrix, tokens } };
