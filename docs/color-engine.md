@@ -48,7 +48,7 @@ type ParseResult =
 
 | | Modern parser | Legacy adapter |
 | --- | --- | --- |
-| Where | `color/` (added in #39) | `src/legacy-parse.ts` |
+| Where | `color/parse.ts` (`parseColor`) | `src/legacy-parse.ts` |
 | Standard | CSS Color 4 | whatever `rgb@0.1.0` did |
 | Output | `ParseResult` with a `Color` | normalized string or `null` |
 | Strictness | strict, reports why | accepts quirks (5-digit hex, `xx#fffxx`, ...) |
@@ -64,3 +64,22 @@ path serves it (see `legacy-warnings.md`).
 Nothing in `color/` knows about CSS serialization beyond what parsing needs,
 the CLI, JSON output, or UI. Formatting for display belongs to the surface that
 needs it.
+
+## Modern parser coverage (`parseColor`)
+
+Supported: named colors (the vendored table, case-insensitive), `transparent`,
+hex with 3/4/6/8 digits, `rgb()`/`rgba()`, `hsl()`/`hsla()` (legacy comma and
+modern space/slash syntax), `hwb()`, `lab()`, `lch()`, `oklab()`, `oklch()`, and
+`color()` for `srgb`, `srgb-linear`, `display-p3`, `xyz`, `xyz-d65`, `xyz-d50`.
+Percentages and angle units (`deg`, `grad`, `rad`, `turn`) are accepted where
+CSS allows them, and `none` parses as `0`.
+
+Clamping matches browsers: `rgb()`, `hsl()`, `hwb()` and hex clamp to their
+gamut when parsed; `lab`/`lch`/`oklab`/`oklch` clamp lightness and chroma only;
+`color()` values are kept as written so wide-gamut colors survive.
+
+Reported as errors rather than guessed at: relative colors (`from`), nested
+functions (`calc()`, `var()`, `env()`), `color-mix()`, `light-dark()`,
+`device-cmyk()`, other `color()` spaces, `currentcolor` and the CSS-wide
+keywords. The scanner is linear in the input length; hostile inputs
+(deep nesting, very long numbers or whitespace runs) are covered by tests.
