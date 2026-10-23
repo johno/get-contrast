@@ -23,7 +23,8 @@
     "prepack": "bun run build",
     "verify:pack": "node scripts/verify-pack.js",
     "prepublishOnly": "bun run test && bun run verify:pack",
-    "test:modern": "bun test ./test/"
+    "test:modern": "bun test ./test/",
+    "test:conformance": "bun test ./test/conformance-wpt.test.js ./test/conformance-properties.test.js ./test/regressions.test.js"
   },
   "repository": "johno/get-contrast",
   "keywords": [

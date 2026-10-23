@@ -109,3 +109,30 @@ browsers do when painting translucent colors and therefore what users see;
 Round-trip tolerances (absolute, in-gamut sRGB through the named space and
 back): srgb-linear 1e-12; display-p3, xyz-d65, xyz-d50, oklab, oklch 1e-9; hsl,
 hwb, lab, lch 1e-7.
+
+## How the engine is tested
+
+Engine tests live in `packages/get-contrast/test/` and are kept apart from the
+v3 compatibility suite (`compat/`): compatibility tests record what v3 did,
+including its bugs; engine tests assert what the standards say.
+
+- `parse.test.js`, `convert.test.js`, `color-model.test.js`: table-driven unit
+  tests, reference vectors (with provenance in the file headers), documented
+  round-trip tolerances, and exhaustive checks over all 148 named colors.
+- `conformance-wpt.test.js`: ~2,700 rows from the web-platform-tests CSS Color
+  suite (BSD-3-Clause; provenance and regeneration in
+  `test/fixtures/wpt/README.md`). Invalid rows must be rejected; valid and
+  computed rows must parse to the browser's value (compared after converting to
+  the expected space, within the precision the browser prints). Valid CSS the
+  engine does not support (calc(), relative colors, `color-mix()`, extra
+  `color()` spaces, comments, escapes) must fail rather than misparse.
+  A failure lists the fixture file, the input, the expected value, and which
+  component disagrees.
+- `conformance-properties.test.js`: seeded property tests (equivalent
+  syntaxes agree, conversion and compositing invariants) and mutation fuzzing
+  of valid syntax: parsing never throws.
+- `regressions.test.js`: one test for every bug found while building the
+  engine (several of them found by the WPT fixtures).
+
+`bun run test:conformance` (in `packages/get-contrast`) runs just these. No test
+needs the network.
