@@ -1,6 +1,9 @@
-// The modern commands. Each takes the library, parsed arguments and an output
-// context, and returns an exit code. They never throw for bad user input:
-// usage errors and unusable colors are printed and returned as exit code 2.
+// The modern commands. Each takes the library, parsed arguments and a context
+// and returns { result, exitCode, human } where `result` is the library's own
+// result object (what --json prints), `exitCode` follows the exit-code matrix,
+// and `human(out, style)` renders the terminal report. Commands throw
+// `UsageError` (or let the library's input errors through) for user mistakes;
+// run.js turns those into exit code 2.
 
 const EXIT = Object.freeze({ OK: 0, NOT_MET: 1, USAGE: 2, FAILURE: 3 });
 
@@ -10,6 +13,8 @@ const SHARED = {
   color: { name: "color", type: "boolean" },
   warnings: { name: "warnings", type: "boolean" },
   help: { name: "help", type: "boolean" },
+  json: { name: "json", type: "boolean" },
+  quiet: { name: "quiet", type: "boolean" },
 };
 const TARGET = {
   level: { name: "level", type: "string", values: ["AA", "AAA"] },
@@ -88,90 +93,137 @@ function noteLines(notes, style) {
 
 // -- check -------------------------------------------------------------------
 
-function check(lib, { positionals, flags }, { out, style }) {
+function check(lib, { positionals, flags }) {
   needs(positionals, 2, "contrast check <foreground> <background>");
   const r = lib.check(positionals[0], positionals[1], targetOptions(flags));
-  const row = (name, ok, needsText) => `  ${name.padEnd(18)}${ok ? style.pass() : style.fail()}   ${style.dim(`needs ${needsText}`)}`;
-  out(`${style.bold(r.foreground.hex)} on ${style.bold(r.background.hex)}`);
-  out(`Contrast ratio  ${style.bold(r.ratioText)}`);
-  out("");
-  out(row("AA  text", r.results.aa.text, "4.5:1"));
-  out(row("AA  large text", r.results.aa.largeText, "3:1"));
-  out(row("AAA text", r.results.aaa.text, "7:1"));
-  out(row("AAA large text", r.results.aaa.largeText, "4.5:1"));
-  out(row("UI components", r.results.ui, "3:1"));
-  out("");
-  out(`Target ${label(r.target)}: ${r.target.passes ? style.pass("PASS") : style.fail("FAIL")}`);
-  for (const line of noteLines(r.notes, style)) out(line);
-  return r.target.passes ? EXIT.OK : EXIT.NOT_MET;
+  return {
+    result: r,
+    exitCode: r.target.passes ? EXIT.OK : EXIT.NOT_MET,
+    human(out, style) {
+      const row = (name, ok, needsText) => `  ${name.padEnd(18)}${ok ? style.pass() : style.fail()}   ${style.dim(`needs ${needsText}`)}`;
+      out(`${style.bold(r.foreground.hex)} on ${style.bold(r.background.hex)}`);
+      out(`Contrast ratio  ${style.bold(r.ratioText)}`);
+      out("");
+      out(row("AA  text", r.results.aa.text, "4.5:1"));
+      out(row("AA  large text", r.results.aa.largeText, "3:1"));
+      out(row("AAA text", r.results.aaa.text, "7:1"));
+      out(row("AAA large text", r.results.aaa.largeText, "4.5:1"));
+      out(row("UI components", r.results.ui, "3:1"));
+      out("");
+      out(`Target ${label(r.target)}: ${r.target.passes ? style.pass("PASS") : style.fail("FAIL")}`);
+      for (const line of noteLines(r.notes, style)) out(line);
+    },
+  };
 }
 
 // -- wcag --------------------------------------------------------------------
 
-function wcag(lib, { positionals, flags }, { out, style }) {
+function wcag(lib, { positionals, flags }) {
   needs(positionals, 2, "contrast wcag <foreground> <background>");
   const r = lib.wcag(positionals[0], positionals[1], flags.backdrop ? { backdrop: flags.backdrop } : {});
-  out(`Contrast ratio  ${style.bold(`${r.ratio.toFixed(2)}:1`)}  ${style.dim(`(${r.ratio})`)}`);
-  out(`Foreground      ${r.foreground.hex}  ${style.dim(`luminance ${r.foreground.luminance.toFixed(4)}`)}`);
-  out(`Background      ${r.background.hex}  ${style.dim(`luminance ${r.background.luminance.toFixed(4)}`)}`);
-  for (const line of noteLines(r.notes, style)) out(line);
-  return EXIT.OK;
+  return {
+    result: r,
+    exitCode: EXIT.OK,
+    human(out, style) {
+      out(`Contrast ratio  ${style.bold(`${r.ratio.toFixed(2)}:1`)}  ${style.dim(`(${r.ratio})`)}`);
+      out(`Foreground      ${r.foreground.hex}  ${style.dim(`luminance ${r.foreground.luminance.toFixed(4)}`)}`);
+      out(`Background      ${r.background.hex}  ${style.dim(`luminance ${r.background.luminance.toFixed(4)}`)}`);
+      for (const line of noteLines(r.notes, style)) out(line);
+    },
+  };
 }
 
 // -- pick --------------------------------------------------------------------
 
-function pick(lib, { positionals, flags }, { out, style }) {
-  if (positionals.length < 2) {
+/**
+ * Candidates from stdin: a JSON array of colors or { name, color } objects, or
+ * one color per line (blank lines ignored).
+ */
+function candidatesFromStdin(text) {
+  const trimmed = text.trim();
+  if (trimmed === "") throw new UsageError("no candidates on stdin");
+  if (trimmed.startsWith("[")) {
+    let parsed;
+    try {
+      parsed = JSON.parse(trimmed);
+    } catch (error) {
+      throw new UsageError(`stdin looks like JSON but does not parse: ${error.message}`);
+    }
+    if (!Array.isArray(parsed)) throw new UsageError("stdin JSON must be an array of colors");
+    return parsed;
+  }
+  return trimmed.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+}
+
+function pick(lib, { positionals, flags }, ctx) {
+  const [background, ...rest] = positionals;
+  let candidates = rest;
+  if (rest.includes("-")) {
+    if (rest.length !== 1) throw new UsageError('"-" (read candidates from stdin) cannot be combined with other candidates');
+    candidates = candidatesFromStdin(ctx.readStdin());
+  }
+  if (!background || candidates.length === 0) {
     throw new UsageError("expected a background and at least one candidate: contrast pick <background> <candidate...>");
   }
-  const [background, ...candidates] = positionals;
   const r = lib.pick(background, candidates, targetOptions(flags));
-  const width = String(r.ranked.length).length;
-  for (const entry of r.ranked) {
-    const mark = entry.passes ? style.pass("pass") : style.fail("fail");
-    out(`${String(entry.rank).padStart(width)}. ${entry.check.foreground.hex}  ${entry.check.ratioText.padStart(8)}  ${mark}  ${style.dim(String(entry.input))}`);
-  }
-  out("");
-  out(r.winner ? `${style.bold("Winner:")} ${r.reason}` : `${style.bold("No winner:")} ${r.reason}`);
-  return r.winner ? EXIT.OK : EXIT.NOT_MET;
+  return {
+    result: r,
+    exitCode: r.winner ? EXIT.OK : EXIT.NOT_MET,
+    human(out, style) {
+      const width = String(r.ranked.length).length;
+      for (const entry of r.ranked) {
+        const mark = entry.passes ? style.pass("pass") : style.fail("fail");
+        const shown = entry.name ? `${entry.name} ${style.dim(String(entry.input.color || entry.input))}` : style.dim(String(entry.input));
+        out(`${String(entry.rank).padStart(width)}. ${entry.check.foreground.hex}  ${entry.check.ratioText.padStart(8)}  ${mark}  ${shown}`);
+      }
+      out("");
+      out(r.winner ? `${style.bold("Winner:")} ${r.reason}` : `${style.bold("No winner:")} ${r.reason}`);
+    },
+  };
 }
 
 // -- find / fix --------------------------------------------------------------
 
-function report(r, { out, style }) {
+function report(r) {
   const which = r.adjusted;
-  if (!r.changed && r.reached) {
-    out(`${style.pass("OK")} ${r.notes[0].message}`);
-    return EXIT.OK;
-  }
-  if (r.suggested) {
-    out(`${style.bold("Suggested")} ${style.bold(r.suggested.css)}  ${style.dim(`(was ${r.original.check[which].hex})`)}`);
-    out(`Contrast  ${r.suggested.check.ratioText}  ${style.dim(`(was ${r.original.check.ratioText})`)}`);
-    const dims = r.change.dimensions.length ? r.change.dimensions.join(", ") : "within rounding";
-    out(`Change    ${r.change.deltaE.toFixed(3)} perceptual distance  ${style.dim(`(${dims})`)}`);
-  } else {
-    out(`${style.fail("No suggestion")} (${r.original.check.ratioText}, target ${label(r.target)})`);
-  }
-  for (const line of noteLines(r.notes, style)) out(line);
-  if (r.reached) {
-    out(`${style.pass("Target met:")} ${label(r.target)}`);
-    return EXIT.OK;
-  }
-  out(`${style.fail("Target not met:")} ${label(r.target)} (${r.limitedBy === "max-change" ? "limited by --max-change" : "unreachable"})`);
-  return EXIT.NOT_MET;
+  const exitCode = r.reached ? EXIT.OK : EXIT.NOT_MET;
+  return {
+    result: r,
+    exitCode,
+    human(out, style) {
+      if (!r.changed && r.reached) {
+        out(`${style.pass("OK")} ${r.notes[0].message}`);
+        return;
+      }
+      if (r.suggested) {
+        out(`${style.bold("Suggested")} ${style.bold(r.suggested.css)}  ${style.dim(`(was ${r.original.check[which].hex})`)}`);
+        out(`Contrast  ${r.suggested.check.ratioText}  ${style.dim(`(was ${r.original.check.ratioText})`)}`);
+        const dims = r.change.dimensions.length ? r.change.dimensions.join(", ") : "within rounding";
+        out(`Change    ${r.change.deltaE.toFixed(3)} perceptual distance  ${style.dim(`(${dims})`)}`);
+      } else {
+        out(`${style.fail("No suggestion")} (${r.original.check.ratioText}, target ${label(r.target)})`);
+      }
+      for (const line of noteLines(r.notes, style)) out(line);
+      if (r.reached) {
+        out(`${style.pass("Target met:")} ${label(r.target)}`);
+      } else {
+        out(`${style.fail("Target not met:")} ${label(r.target)} (${r.limitedBy === "max-change" ? "limited by --max-change" : "unreachable"})`);
+      }
+    },
+  };
 }
 
-function find(lib, { positionals, flags }, ctx) {
+function find(lib, { positionals, flags }) {
   needs(positionals, 1, "contrast find <color> --against <color>");
   if (!flags.against) throw new UsageError("find needs --against <color>");
   const options = { ...solverOptions(flags), role: flags.role || "foreground" };
-  return report(lib.find(positionals[0], flags.against, options), ctx);
+  return report(lib.find(positionals[0], flags.against, options));
 }
 
-function fix(lib, { positionals, flags }, ctx) {
+function fix(lib, { positionals, flags }) {
   needs(positionals, 2, "contrast fix <foreground> <background>");
   const options = { ...solverOptions(flags), change: flags.change || "foreground" };
-  return report(lib.fix(positionals[0], positionals[1], options), ctx);
+  return report(lib.fix(positionals[0], positionals[1], options));
 }
 
 module.exports = { EXIT, UsageError, SPECS, COMMANDS: { check, wcag, pick, find, fix } };

@@ -1,6 +1,8 @@
 const COMMANDS = ["check", "wcag", "pick", "find", "fix"];
 
-const COLOR_FLAGS = `  --color / --no-color   Force or disable ANSI colors (default: only on a terminal)
+const COLOR_FLAGS = `  --json                 Print one JSON document (the library's result) instead of a report
+  --quiet                Print nothing; the exit code is the result (not with --json)
+  --color / --no-color   Force or disable ANSI colors (default: only on a terminal)
   --no-warnings          Suppress warnings (also: GET_CONTRAST_NO_WARNINGS=1)`;
 
 const TARGET_FLAGS = `  --level AA|AAA         WCAG level to hold the pair to (default: AA)
@@ -47,12 +49,16 @@ Rank candidate foreground colors on a background and pick the best one that
 meets the target (highest contrast; ties keep command-line order). Exits 0 if one
 meets the target, 1 if none does.
 
+Pass "-" as the only candidate to read them from stdin: a JSON array of colors
+or { "name", "color" } objects, or one color per line.
+
 Options:
 ${TARGET_FLAGS}
 ${COLOR_FLAGS}
 
 Example:
-  contrast pick white "#767676" "#111" "#ddd" --level AAA`,
+  contrast pick white "#767676" "#111" "#ddd" --level AAA
+  printf '#111\n#767676\n' | contrast pick white - --json`,
 
   find: `Usage: contrast find <color> --against <color> [options]
 

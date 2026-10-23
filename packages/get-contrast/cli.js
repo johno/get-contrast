@@ -6,5 +6,6 @@ const code = require("./cli-src/run.js")(require("."), process.argv, {
   stderr: process.stderr,
   env: process.env,
   version: require("./package.json").version,
+  stdinIsTTY: Boolean(process.stdin.isTTY),
 });
 if (code) process.exitCode = code;
