@@ -42,11 +42,21 @@
         "contrast": "./cli.js",
       },
     },
+    "skills/get-contrast": {
+      "name": "@get-contrast/skill",
+      "version": "0.0.0",
+      "dependencies": {
+        "@get-contrast/cli": "workspace:*",
+        "get-contrast": "workspace:*",
+      },
+    },
   },
   "packages": {
     "@emnapi/runtime": ["@emnapi/runtime@1.11.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA=="],
 
     "@get-contrast/cli": ["@get-contrast/cli@workspace:packages/cli"],
+
+    "@get-contrast/skill": ["@get-contrast/skill@workspace:skills/get-contrast"],
 
     "@img/colour": ["@img/colour@1.1.0", "", {}, "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ=="],
 

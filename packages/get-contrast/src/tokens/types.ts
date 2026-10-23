@@ -44,7 +44,7 @@ export interface TokenIssue {
 }
 
 export class TokenSourceError extends Error {
-  readonly code: "invalid-json" | "invalid-css" | "empty" | "unknown-format";
+  readonly code: "invalid-json" | "invalid-css" | "empty" | "unknown-format" | "unknown-scope";
   constructor(code: TokenSourceError["code"], message: string) {
     super(message);
     this.name = "TokenSourceError";

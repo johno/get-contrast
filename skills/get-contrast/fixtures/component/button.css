@@ -1,0 +1,17 @@
+:root {
+  --btn-bg: #3b82f6;
+}
+
+.button {
+  background: var(--btn-bg);
+  color: #ffffff;
+}
+
+.button:hover {
+  background: #2563eb;
+}
+
+.caption {
+  background: #ffffff;
+  color: #9ca3af;
+}

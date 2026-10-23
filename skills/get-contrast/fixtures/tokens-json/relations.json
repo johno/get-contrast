@@ -1,0 +1,8 @@
+{
+  "relations": [
+    "text.default -> surface.default",
+    "text.secondary -> surface.raised",
+    "text.muted -> surface.default",
+    "button.text -> button.background"
+  ]
+}

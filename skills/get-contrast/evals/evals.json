@@ -1,0 +1,164 @@
+[
+  {
+    "id": "check-component",
+    "workflow": "Check a component",
+    "prompt": "Does the button in button.css (and its hover state, and the .caption) meet AA contrast?",
+    "fixture": "component",
+    "steps": [
+      {
+        "note": "Read button.css: .button is #ffffff on var(--btn-bg) = #3b82f6.",
+        "run": "contrast check \"#ffffff\" \"#3b82f6\" --json",
+        "expectExit": 1,
+        "expect": [
+          { "path": "result.ratioText", "equals": "3.67:1" },
+          { "path": "result.target.passes", "equals": false }
+        ]
+      },
+      {
+        "note": "The hover state is #ffffff on #2563eb.",
+        "run": "contrast check \"#ffffff\" \"#2563eb\" --json",
+        "expectExit": 0,
+        "expect": [{ "path": "result.target.passes", "equals": true }]
+      },
+      {
+        "note": ".caption is #9ca3af on #ffffff.",
+        "run": "contrast check \"#9ca3af\" \"#ffffff\" --json",
+        "expectExit": 1,
+        "expect": [{ "path": "result.ratioText", "equals": "2.53:1" }]
+      }
+    ]
+  },
+  {
+    "id": "fix-one-pair",
+    "workflow": "Fix one failed pair",
+    "prompt": "The .caption text in button.css is too faint. Fix it with the smallest change.",
+    "fixture": "component",
+    "steps": [
+      { "run": "contrast check \"#9ca3af\" \"#ffffff\" --json", "expectExit": 1, "save": "before" },
+      {
+        "note": "No tokens or palette exist for captions, so synthesize a constrained fix.",
+        "run": "contrast fix \"#9ca3af\" \"#ffffff\" --json",
+        "expectExit": 0,
+        "save": "fix",
+        "expect": [
+          { "path": "result.reached", "equals": true },
+          { "path": "result.suggested.css", "matches": "^#[0-9a-f]{6}$" },
+          { "path": "result.change.dimensions", "equals": ["lightness"] },
+          { "path": "result.notes", "equals": [] }
+        ]
+      },
+      { "replace": { "file": "button.css", "from": "color: #9ca3af;", "toPrefix": "color: ", "toSaved": { "from": "fix", "path": "result.suggested.css" }, "toSuffix": ";" } },
+      { "assertChangedLines": { "file": "button.css", "max": 1 } },
+      {
+        "note": "Re-run the check on the new value.",
+        "run": "contrast check \"{{fix.result.suggested.css}}\" \"#ffffff\" --json",
+        "expectExit": 0,
+        "expect": [{ "path": "result.target.passes", "equals": true }]
+      }
+    ]
+  },
+  {
+    "id": "keep-the-label-white",
+    "workflow": "Fix one failed pair",
+    "prompt": "The white label on the primary button fails contrast, but the label must stay white. Fix it.",
+    "fixture": "component",
+    "steps": [
+      { "run": "contrast check \"#ffffff\" \"#3b82f6\" --json", "expectExit": 1 },
+      {
+        "note": "The foreground must not move, so change the background.",
+        "run": "contrast fix \"#ffffff\" \"#3b82f6\" --change background --json",
+        "expectExit": 0,
+        "save": "fix",
+        "expect": [
+          { "path": "result.adjusted", "equals": "background" },
+          { "path": "result.reached", "equals": true }
+        ]
+      },
+      { "replace": { "file": "button.css", "from": "--btn-bg: #3b82f6;", "toPrefix": "--btn-bg: ", "toSaved": { "from": "fix", "path": "result.suggested.css" }, "toSuffix": ";" } },
+      { "assertChangedLines": { "file": "button.css", "max": 1 } },
+      { "run": "contrast check \"#ffffff\" \"{{fix.result.suggested.css}}\" --json", "expectExit": 0 }
+    ]
+  },
+  {
+    "id": "audit-palette",
+    "workflow": "Audit a palette",
+    "prompt": "Audit palette.json for AA contrast and tell me which backgrounds are hard to serve.",
+    "fixture": "palette",
+    "steps": [
+      {
+        "run": "contrast audit palette.json --json",
+        "expectExit": 0,
+        "save": "audit",
+        "expect": [
+          { "path": "result.summary.unique", "equals": 6 },
+          { "path": "result.summary.failing", "greaterThan": 0 },
+          { "path": "result.recommendations[3].candidates", "equals": [1] },
+          { "note": "slate (index 3) can only be served by paper (index 1)" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "audit-tokens-json",
+    "workflow": "Audit design tokens",
+    "prompt": "Audit our design tokens for AA and fix any failures without inventing colors if we already have a suitable one.",
+    "fixture": "tokens-json",
+    "steps": [
+      {
+        "run": "contrast tokens tokens.json --relations relations.json --json",
+        "expectExit": 1,
+        "save": "audit",
+        "expect": [
+          { "path": "result.summary.fail", "equals": 1 },
+          { "path": "result.relations[2].suggestion.recommended", "equals": "existing" },
+          { "path": "result.relations[2].suggestion.existing.token", "equals": "text.secondary" },
+          { "path": "result.verification.ok", "equals": true }
+        ]
+      },
+      { "applyPatch": { "from": "audit", "file": "tokens.json" } },
+      { "assertChangedLines": { "file": "tokens.json", "max": 1 } },
+      {
+        "run": "contrast tokens tokens.json --relations relations.json --json",
+        "expectExit": 0,
+        "expect": [{ "path": "result.summary.pass", "equals": 4 }]
+      }
+    ]
+  },
+  {
+    "id": "audit-tokens-css-dark",
+    "workflow": "Audit design tokens",
+    "prompt": "Does our dark theme meet AA? Fix what fails.",
+    "fixture": "theme-css",
+    "steps": [
+      {
+        "note": "The light theme is fine; audit the dark scope.",
+        "run": "contrast tokens theme.css --relations relations.json --json",
+        "expectExit": 0
+      },
+      {
+        "run": "contrast tokens theme.css --scope \"[data-theme=dark]\" --relations relations.json --json",
+        "expectExit": 1,
+        "save": "audit",
+        "expect": [
+          { "path": "result.relations[2].suggestion.existing.token", "equals": "--text-secondary" },
+          { "path": "result.edits[0].source.selector", "equals": "[data-theme=\"dark\"]" }
+        ]
+      },
+      { "applyCssEdits": { "from": "audit", "file": "theme.css" } },
+      { "assertChangedLines": { "file": "theme.css", "max": 1 } },
+      { "run": "contrast tokens theme.css --scope \"[data-theme=dark]\" --relations relations.json --json", "expectExit": 0 },
+      { "run": "contrast tokens theme.css --relations relations.json --json", "expectExit": 0 }
+    ]
+  },
+  {
+    "id": "review-regression",
+    "workflow": "Review color changes for regressions",
+    "prompt": "I lightened the brand blue in tokens.json. Did that break any contrast?",
+    "fixture": "review",
+    "steps": [
+      { "run": "contrast tokens base/tokens.json --relations relations.json --json", "expectExit": 0, "save": "base" },
+      { "run": "contrast tokens changed/tokens.json --relations relations.json --json", "expectExit": 1, "save": "changed" },
+      { "assertFlippedToFail": { "base": "base", "changed": "changed", "equals": ["button.text on button.background"] } }
+    ]
+  }
+]
