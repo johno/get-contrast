@@ -110,6 +110,18 @@ ${TARGET_FLAGS}
   --max-colors N         Refuse palettes with more unique colors (default 200)
 ${COLOR_FLAGS}`,
 
+  mcp: `Usage: contrast mcp
+
+Start the get-contrast MCP (Model Context Protocol) server on stdio, for coding
+agents and other MCP clients. stdout carries protocol messages only; run it from
+an MCP client's server configuration, not interactively:
+
+  { "command": "npx", "args": ["-y", "get-contrast", "mcp"] }
+
+Tools (all read-only; they take file CONTENTS, never paths): check_contrast,
+check_wcag, pick_color, find_accessible_color, audit_palette, audit_tokens.
+Failing a WCAG check is a normal result; isError means bad input or a tool failure.`,
+
   tokens: `Usage: contrast tokens <tokens-file | -> --relations <relations.json> [options]
 
 Audit design tokens against explicit foreground/background relationships and
@@ -173,6 +185,7 @@ Commands:
   audit <palette.json | ->          Audit a palette: failing pairs, best colors
   matrix <palette.json | ->         All-pairs contrast matrix
   tokens <file | -> --relations f   Audit design tokens and suggest fixes
+  mcp                               Start the MCP server on stdio (for agents)
   help [command]                    Show help
 
 Run "contrast help <command>" for options. Exit codes: 0 success or target met,

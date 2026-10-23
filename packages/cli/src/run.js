@@ -9,6 +9,7 @@ const { EXIT, UsageError, SPECS, COMMANDS } = require("./commands");
 const { HELP, mainHelp } = require("./help");
 
 const MODERN = Object.keys(COMMANDS);
+const COMMAND_NAMES = [...MODERN, "mcp"];
 
 function defaultIo() {
   return {
@@ -49,12 +50,13 @@ function describeError(lib, error) {
  *   stdinIsTTY?: boolean,
  *   readStdin?: () => string,
  *   readFile?: (path: string) => string,
+ *   startMcp?: () => void,
  * }} [io]
  * @returns {number} exit code
  */
 function run(lib, argv, io = defaultIo()) {
   const first = argv[2];
-  const isCommand = MODERN.includes(first) || first === "help";
+  const isCommand = COMMAND_NAMES.includes(first) || first === "help";
   const isMeta = first === "--help" || first === "-h" || first === "--version" || first === "-v";
 
   // Anything else is the historical invocation: contrast <color1> [color2].
@@ -78,6 +80,25 @@ function run(lib, argv, io = defaultIo()) {
       return EXIT.USAGE;
     }
     out(HELP[topic]);
+    return EXIT.OK;
+  }
+
+  if (first === "mcp") {
+    if (argv[3] === "--help" || argv[3] === "-h") {
+      out(HELP.mcp);
+      return EXIT.OK;
+    }
+    if (argv.length > 3) {
+      err(`error: unknown argument "${argv[3]}". "contrast mcp" takes no arguments.`);
+      err('Run "contrast help mcp" for usage.');
+      return EXIT.USAGE;
+    }
+    if (!io.startMcp) {
+      err("error: the MCP server is not available in this build.");
+      return EXIT.FAILURE;
+    }
+    // Serves JSON-RPC on stdio until stdin closes; stdout carries protocol messages only.
+    io.startMcp();
     return EXIT.OK;
   }
 

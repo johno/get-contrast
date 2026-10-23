@@ -1,0 +1,17 @@
+{
+  "name": "@get-contrast/mcp",
+  "version": "3.0.1",
+  "private": true,
+  "description": "MCP server for get-contrast. Shipped inside the get-contrast package (`contrast mcp`).",
+  "license": "MIT",
+  "main": "src/index.js",
+  "bin": {
+    "get-contrast-mcp": "./bin.js"
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "get-contrast": "workspace:*"
+  }
+}

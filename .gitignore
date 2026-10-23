@@ -5,3 +5,4 @@ dist
 next-env.d.ts
 *.tsbuildinfo
 packages/get-contrast/cli-src
+packages/get-contrast/mcp-src

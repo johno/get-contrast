@@ -9,7 +9,8 @@
         "dist/**",
         ".next/**",
         "!.next/cache/**",
-        "cli-src/**"
+        "cli-src/**",
+        "mcp-src/**"
       ]
     },
     "test": {

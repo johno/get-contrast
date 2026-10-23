@@ -7,5 +7,6 @@ const code = require("./cli-src/run.js")(require("."), process.argv, {
   env: process.env,
   version: require("./package.json").version,
   stdinIsTTY: Boolean(process.stdin.isTTY),
+  startMcp: () => require("./mcp-src/index.js").serve(require("."), { version: require("./package.json").version }),
 });
 if (code) process.exitCode = code;
