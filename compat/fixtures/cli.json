@@ -1,0 +1,87 @@
+{
+  "contrast": {
+    "status": 0,
+    "stdout": "",
+    "stderr": "usage: contrast <color1> [color2 (default: #fff)]\n"
+  },
+  "contrast \"#000\"": {
+    "status": 0,
+    "stdout": "Ratio: 21\nScore: AAA\n",
+    "stderr": ""
+  },
+  "contrast \"#000\" \"#fff\"": {
+    "status": 0,
+    "stdout": "Ratio: 21\nScore: AAA\n",
+    "stderr": ""
+  },
+  "contrast \"#fff\" \"#000\"": {
+    "status": 0,
+    "stdout": "Ratio: 21\nScore: AAA\n",
+    "stderr": ""
+  },
+  "contrast \"white\"": {
+    "status": 1,
+    "stdout": "Ratio: 1\nScore: Fail\nThe contrast is not accessible.\n",
+    "stderr": ""
+  },
+  "contrast \"#ff0\" \"#fff\"": {
+    "status": 1,
+    "stdout": "Ratio: 1.0738392309265699\nScore: Fail\nThe contrast is not accessible.\n",
+    "stderr": ""
+  },
+  "contrast \"#777\"": {
+    "status": 1,
+    "stdout": "Ratio: 4.478089453577214\nScore: AA Large\nThe contrast is not accessible.\n",
+    "stderr": ""
+  },
+  "contrast \"#767676\"": {
+    "status": 0,
+    "stdout": "Ratio: 4.542224959605253\nScore: AA\n",
+    "stderr": ""
+  },
+  "contrast \"tomato\" \"DarkSlateGray\"": {
+    "status": 1,
+    "stdout": "Ratio: 3.030284222238259\nScore: AA Large\nThe contrast is not accessible.\n",
+    "stderr": ""
+  },
+  "contrast \"#000\" \"#fff\" \"extra\"": {
+    "status": 0,
+    "stdout": "Ratio: 21\nScore: AAA\n",
+    "stderr": ""
+  },
+  "contrast \"\" \"#fff\"": {
+    "status": 1,
+    "stdout": "",
+    "stderr": "throws TypeError: <engine null-dereference> (stack trace omitted)\n"
+  },
+  "contrast \"#000\" \"\"": {
+    "status": 0,
+    "stdout": "Ratio: 21\nScore: AAA\n",
+    "stderr": ""
+  },
+  "contrast \"foo\"": {
+    "status": 1,
+    "stdout": "",
+    "stderr": "throws TypeError: <engine null-dereference> (stack trace omitted)\n"
+  },
+  "contrast \"#000\" \"foo\"": {
+    "status": 1,
+    "stdout": "",
+    "stderr": "throws TypeError: <engine null-dereference> (stack trace omitted)\n"
+  },
+  "contrast \"transparent\"": {
+    "status": 1,
+    "stdout": "",
+    "stderr": "throws TypeError: get-contrast cannot contrast transparent colors (stack trace omitted)\n"
+  },
+  "contrast \"rgba(0,0,0,0)\"": {
+    "status": 1,
+    "stdout": "",
+    "stderr": "throws TypeError: get-contrast cannot contrast transparent colors (stack trace omitted)\n"
+  },
+  "contrast \"rgb(0 0 0)\"": {
+    "status": 1,
+    "stdout": "",
+    "stderr": "throws TypeError: <engine null-dereference> (stack trace omitted)\n"
+  }
+}

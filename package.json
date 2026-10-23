@@ -13,7 +13,8 @@
   },
   "scripts": {
     "test": "ava -v",
-    "test:compat": "bun test compat"
+    "test:compat": "bun test compat",
+    "compat:update": "node compat/generate.js"
   },
   "repository": "johno/get-contrast",
   "keywords": [
