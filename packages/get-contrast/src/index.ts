@@ -15,6 +15,18 @@ export type {
   WcagResult,
   WcagUse,
 } from "./wcag.js";
+export { find, fix } from "./solve.js";
+export type {
+  ChangedDimension,
+  FindOptions,
+  FixNote,
+  FixNoteCode,
+  FixOptions,
+  FixResult,
+  LimitedBy,
+  OklchValues,
+  SolveDirection,
+} from "./solve.js";
 export { pick } from "./pick.js";
 export type { PickCandidate, PickOptions, PickReasonCode, PickResult, RankedCandidate } from "./pick.js";
 export { parseColor } from "./color/parse.js";

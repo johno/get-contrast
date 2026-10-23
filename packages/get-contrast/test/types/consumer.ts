@@ -10,7 +10,10 @@ import {
   check,
   wcag,
   pick,
+  find,
+  fix,
   type PickResult,
+  type FixResult,
   parseColor,
   thresholdFor,
   ColorInputError,
@@ -63,4 +66,18 @@ const reason: string = picked.reason;
 // @ts-expect-error candidates must be an array
 pick("#fff", "#000");
 
-export { picked, winnerName, reason, r, s, a, t, bad, passes, ratioText, aa, hex, fromParsed, theColor, threshold, err };
+const fixed: FixResult = fix("#777", "#fff", { level: "AAA", direction: "darker", maxChange: 0.2, gamut: "display-p3", preserveChroma: false });
+const css: string | undefined = fixed.suggested?.css;
+const reached: boolean = fixed.reached;
+const limit: "max-change" | "unreachable" | null = fixed.limitedBy;
+const moved: readonly ("lightness" | "chroma" | "hue")[] = fixed.change.dimensions;
+find("#777", "#fff", { role: "background" });
+fix("#777", "#fff", { change: "background" });
+// @ts-expect-error unknown direction
+fix("#777", "#fff", { direction: "sideways" });
+// @ts-expect-error unknown gamut
+fix("#777", "#fff", { gamut: "rec2020" });
+// @ts-expect-error fix() takes `change`, find() takes `role`
+fix("#777", "#fff", { role: "background" });
+
+export { fixed, css, reached, limit, moved, picked, winnerName, reason, r, s, a, t, bad, passes, ratioText, aa, hex, fromParsed, theColor, threshold, err };
