@@ -1,9 +1,9 @@
 // Legacy (v3) API. Behavior here is frozen by the compatibility suite in
 // compat/ and documented in docs/v3-compatibility.md. Do not "fix" quirks in
 // this file; corrected behavior belongs in new APIs.
-import { isLegacyNamedColor, lookupNamedColor, parseLegacyColor } from "./legacy-parse";
-import { contrastRatio, scoreForRatio } from "./legacy-wcag";
-import type { LegacyOptions, LegacyScore } from "./types";
+import { isLegacyNamedColor, lookupNamedColor, parseLegacyColor } from "./legacy-parse.js";
+import { contrastRatio, scoreForRatio } from "./legacy-wcag.js";
+import type { LegacyOptions, LegacyScore } from "./types.js";
 
 /** Channel values as the strings they were parsed from, e.g. ["255", "0", "0"]. */
 type RgbChannels = string[];

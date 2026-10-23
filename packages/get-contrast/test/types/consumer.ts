@@ -7,7 +7,7 @@ import {
   isNotTransparent,
   type LegacyOptions,
   type LegacyScore,
-} from "../../dist/index";
+} from "../../dist/cjs/index";
 
 const options: LegacyOptions = { ignoreAlpha: true };
 

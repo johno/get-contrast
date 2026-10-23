@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: bun install --frozen-lockfile
+      - name: Build packages and apps/www
+        run: bun run build
+      - name: Typecheck
+        run: bun run typecheck
+      - name: v3 compatibility suite
+        run: bun run test:compat
+        working-directory: packages/get-contrast
+      - name: Modern tests
+        run: bun run test:modern
+        working-directory: packages/get-contrast
+      - name: CLI tests
+        run: bun run test
+        working-directory: packages/cli
+      - name: Pack, inspect, and smoke-test the tarball
+        run: bun run verify:pack
+        working-directory: packages/get-contrast

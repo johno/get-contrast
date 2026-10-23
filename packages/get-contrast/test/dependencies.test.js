@@ -41,7 +41,11 @@ test("published code only imports relative modules", () => {
   const specifier = /(?:require\(\s*|from\s+|import\(\s*)["']([^"']+)["']/g;
   const offenders = [];
   for (const file of files) {
-    const text = fs.readFileSync(file, "utf8");
+    // Comments may quote import statements as examples; only code counts.
+    const text = fs
+      .readFileSync(file, "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
     for (const [, spec] of text.matchAll(specifier)) {
       if (!spec.startsWith(".") && !allowed.has(spec)) {
         offenders.push(`${path.relative(root, file)}: ${spec}`);
