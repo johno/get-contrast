@@ -6,14 +6,15 @@
   "types": "types/index.d.ts",
   "files": [
     "cli.js",
-    "index.js"
+    "index.js",
+    "warnings.js"
   ],
   "bin": {
     "contrast": "./cli.js"
   },
   "scripts": {
     "test": "ava -v",
-    "test:compat": "bun test compat",
+    "test:compat": "bun test compat && GET_CONTRAST_NO_WARNINGS=1 bun test compat",
     "compat:update": "node compat/generate.js"
   },
   "repository": "johno/get-contrast",
