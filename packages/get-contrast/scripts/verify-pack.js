@@ -35,6 +35,7 @@ try {
     "warnings.js",
     "cli.js",
     "cli-src/run.js",
+    "mcp-src/index.js",
     "dist/cjs/index.js",
     "dist/cjs/index.d.ts",
     "dist/esm/index.js",
@@ -45,7 +46,7 @@ try {
 
   const allowed = [
     /^(package\.json|readme\.md|license|index\.js|warnings\.js|cli\.js)$/,
-    /^cli-src\/[\w.-]+\.js$/,
+    /^(cli|mcp)-src\/[\w.-]+\.js$/,
     /^dist\/(cjs|esm)\/([\w-]+\/)*[\w.-]+\.(js|d\.ts)$/,
     /^dist\/esm\/package\.json$/,
   ];
@@ -134,6 +135,18 @@ try {
     tokenDoc = JSON.parse(tokenRun.stdout);
   } catch {}
   check(tokenRun.status === 1 && tokenDoc && tokenDoc.result.summary.fail === 1 && tokenDoc.patch.length === 1, `contrast tokens: ${JSON.stringify(tokenRun)}`);
+  const mcpInput = [
+    { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "verify-pack", version: "1" } } },
+    { jsonrpc: "2.0", method: "notifications/initialized" },
+    { jsonrpc: "2.0", id: 2, method: "tools/list" },
+    { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "check_contrast", arguments: { foreground: "#777", background: "#fff" } } },
+  ].map((m) => JSON.stringify(m)).join("\n") + "\n";
+  const mcp = inProject(bin, ["mcp"], { input: mcpInput });
+  const mcpLines = mcp.stdout.trim().split("\n").map((l) => JSON.parse(l));
+  check(
+    mcp.status === 0 && mcp.stderr === "" && mcpLines.length === 3 && mcpLines[1].result.tools.length === 6 && mcpLines[2].result.structuredContent.status === "fail",
+    `contrast mcp: ${JSON.stringify(mcp)}`
+  );
   const quiet = inProject(bin, ["check", "#777", "#fff", "--quiet"]);
   check(quiet.status === 1 && quiet.stdout === "" && quiet.stderr === "", `contrast check --quiet: ${JSON.stringify(quiet)}`);
   const version = inProject(bin, ["--version"]);

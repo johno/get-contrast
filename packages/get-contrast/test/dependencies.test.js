@@ -37,6 +37,7 @@ test("published code only imports relative modules", () => {
     ...sourceFiles(path.join(root, "src"), [".ts"]),
     ...sourceFiles(path.join(root, "dist"), [".js"]),
     ...sourceFiles(path.join(root, "cli-src"), [".js"]),
+    ...sourceFiles(path.join(root, "mcp-src"), [".js"]),
     ...["index.js", "warnings.js", "cli.js"].map((f) => path.join(root, f)),
   ];
   const specifier = /(?:require\(\s*|from\s+|import\(\s*)["']([^"']+)["']/g;
@@ -49,7 +50,7 @@ test("published code only imports relative modules", () => {
       .replace(/^\s*\/\/.*$/gm, "");
     // The CLI runs on Node, so it may use Node built-ins; the library never may
     // (test/consumers.test.js enforces that for src/).
-    const isCli = file.startsWith(path.join(root, "cli-src")) || path.basename(file) === "cli.js";
+    const isCli = file.startsWith(path.join(root, "cli-src")) || file.startsWith(path.join(root, "mcp-src")) || path.basename(file) === "cli.js";
     for (const [, spec] of text.matchAll(specifier)) {
       if (isCli && spec.startsWith("node:")) continue;
       if (!spec.startsWith(".") && !allowed.has(spec)) {

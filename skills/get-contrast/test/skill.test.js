@@ -189,9 +189,12 @@ describe("SKILL.md", () => {
     for (const flag of new Set(skill.match(/--[a-z][a-z-]+/g))) expect([flag, allHelp.includes(flag)]).toEqual([flag, true]);
   });
 
-  test("names only MCP tools that are planned for the server", () => {
-    const tools = [...skill.matchAll(/\| `(\w+)` \|/g)].map((m) => m[1]).filter((t) => t.includes("_"));
-    expect(tools.sort()).toEqual(["audit_palette", "audit_tokens", "check_contrast", "check_wcag", "find_accessible_color", "pick_color"]);
+  test("names exactly the tools the MCP server provides", () => {
+    const { createContrastServer } = require(path.join(repo, "packages", "mcp", "src"));
+    const server = createContrastServer(require(path.join(repo, "packages", "get-contrast")), {});
+    const provided = server.handle({ jsonrpc: "2.0", id: 1, method: "tools/list" }).result.tools.map((tool) => tool.name);
+    const mentioned = [...skill.matchAll(/\| `(\w+)` \|/g)].map((m) => m[1]).filter((name) => name.includes("_"));
+    expect(mentioned.sort()).toEqual([...provided].sort());
   });
 });
 

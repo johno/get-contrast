@@ -32,6 +32,7 @@
         "contrast": "./bin.js",
       },
       "dependencies": {
+        "@get-contrast/mcp": "workspace:*",
         "get-contrast": "workspace:*",
       },
     },
@@ -42,11 +43,22 @@
         "contrast": "./cli.js",
       },
     },
+    "packages/mcp": {
+      "name": "@get-contrast/mcp",
+      "version": "3.0.1",
+      "bin": {
+        "get-contrast-mcp": "./bin.js",
+      },
+      "dependencies": {
+        "get-contrast": "workspace:*",
+      },
+    },
     "skills/get-contrast": {
       "name": "@get-contrast/skill",
       "version": "0.0.0",
       "dependencies": {
         "@get-contrast/cli": "workspace:*",
+        "@get-contrast/mcp": "workspace:*",
         "get-contrast": "workspace:*",
       },
     },
@@ -55,6 +67,8 @@
     "@emnapi/runtime": ["@emnapi/runtime@1.11.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA=="],
 
     "@get-contrast/cli": ["@get-contrast/cli@workspace:packages/cli"],
+
+    "@get-contrast/mcp": ["@get-contrast/mcp@workspace:packages/mcp"],
 
     "@get-contrast/skill": ["@get-contrast/skill@workspace:skills/get-contrast"],
 

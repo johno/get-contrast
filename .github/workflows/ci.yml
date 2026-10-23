@@ -37,6 +37,9 @@ jobs:
       - name: CLI tests
         run: bun run test
         working-directory: packages/cli
+      - name: MCP server tests
+        run: bun run test
+        working-directory: packages/mcp
       - name: Agent skill tests (fixture tasks replayed against the CLI)
         run: bun run test
         working-directory: skills/get-contrast

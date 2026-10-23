@@ -73,6 +73,38 @@ describe("dispatch: legacy vs commands", () => {
   });
 });
 
+describe("contrast mcp", () => {
+  test("help documents the config and the read-only tools", () => {
+    for (const r of [cli("mcp", "--help"), cli("help", "mcp")]) {
+      expect(r.status).toBe(0);
+      expect(r.stdout).toContain('{ "command": "npx", "args": ["-y", "get-contrast", "mcp"] }');
+      expect(r.stdout).toContain("check_contrast");
+    }
+    expect(cli("help").stdout).toContain("mcp                               Start the MCP server");
+  });
+
+  test("takes no arguments", () => {
+    const r = cli("mcp", "extra");
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain('unknown argument "extra"');
+    expect(r.stdout).toBe("");
+  });
+
+  test("serves JSON-RPC on stdout only, and exits when stdin closes", () => {
+    const r = spawnSync("node", [bin, "mcp"], { encoding: "utf8", input: '{"jsonrpc":"2.0","id":1,"method":"ping"}\n' });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toBe('{"jsonrpc":"2.0","id":1,"result":{}}\n');
+    expect(r.stderr).toBe("");
+  });
+
+  test("a build without the server says so (exit 3)", () => {
+    let stderr = "";
+    const code = run(lib, ["node", "contrast", "mcp"], { stdout: { write() {} }, stderr: { write: (s) => (stderr += s) }, env: {} });
+    expect(code).toBe(3);
+    expect(stderr).toContain("not available in this build");
+  });
+});
+
 describe("contrast check", () => {
   test("a passing pair: report, threshold explanations, exit 0", () => {
     const r = cli("check", "#767676", "white");
