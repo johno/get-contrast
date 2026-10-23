@@ -45,11 +45,12 @@ describe("golden fixtures", () => {
   });
 
   test("fixtures cover the whole legacy surface", () => {
-    const keys = Object.keys(load("api.json"));
+    const fixture = load("api.json");
+    const keys = Object.keys(fixture);
     for (const fn of ["ratio", "score", "isAccessible", "isNotTransparent"]) {
       expect(keys.some((k) => k.startsWith(`${fn}(`))).toBe(true);
     }
-    expect(keys.some((k) => load("api.json")[k].startsWith("throws TypeError"))).toBe(true);
+    expect(Object.values(fixture).some((v) => v.startsWith("throws TypeError"))).toBe(true);
   });
 });
 
