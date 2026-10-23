@@ -1,0 +1,6 @@
+[
+  "text.default -> surface.default",
+  "text.secondary -> surface.default",
+  "text.muted -> surface.default",
+  "link.default -> surface.default"
+]

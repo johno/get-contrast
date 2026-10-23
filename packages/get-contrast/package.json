@@ -8,6 +8,7 @@
     "cli.js",
     "cli-src",
     "mcp-src",
+    "skill",
     "index.js",
     "warnings.js",
     "dist"

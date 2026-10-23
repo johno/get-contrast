@@ -7,6 +7,14 @@
       "dependsOn": [
         "build"
       ]
+    },
+    "build": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../cli/src/**",
+        "../mcp/src/**",
+        "../../skills/get-contrast/SKILL.md"
+      ]
     }
   }
 }

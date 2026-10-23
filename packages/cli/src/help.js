@@ -1,4 +1,4 @@
-const COMMANDS = ["check", "wcag", "pick", "find", "fix", "audit", "matrix", "tokens"];
+const COMMANDS = ["check", "wcag", "pick", "find", "fix", "audit", "matrix", "tokens", "skill", "mcp"];
 
 const COLOR_FLAGS = `  --json                 Print one JSON document (the library's result) instead of a report
   --quiet                Print nothing; the exit code is the result (not with --json)
@@ -111,16 +111,47 @@ ${TARGET_FLAGS}
 ${COLOR_FLAGS}`,
 
   mcp: `Usage: contrast mcp
+       contrast mcp config [--key K] [--name N] [--local]
+       contrast mcp install   --file <config.json> [--key K] [--name N] [--local] [--dry-run] [--force]
+       contrast mcp uninstall --file <config.json> [--key K] [--name N] [--dry-run] [--force]
 
-Start the get-contrast MCP (Model Context Protocol) server on stdio, for coding
-agents and other MCP clients. stdout carries protocol messages only; run it from
-an MCP client's server configuration, not interactively:
+"contrast mcp" starts the get-contrast MCP (Model Context Protocol) server on
+stdio, for coding agents and other MCP clients. stdout carries protocol messages
+only; run it from an MCP client's server configuration, not interactively:
 
   { "command": "npx", "args": ["-y", "get-contrast", "mcp"] }
 
 Tools (all read-only; they take file CONTENTS, never paths): check_contrast,
 check_wcag, pick_color, find_accessible_color, audit_palette, audit_tokens.
-Failing a WCAG check is a normal result; isError means bad input or a tool failure.`,
+Failing a WCAG check is a normal result; isError means bad input or a tool failure.
+
+Installing is explicit and inspectable. "config" prints the entry to add by hand.
+"install --file" merges ONE entry into a JSON config under --key (default
+"mcpServers") and leaves everything else alone; it refuses a file that is not
+strict JSON and a different existing entry (unless --force); --dry-run shows the
+result without writing. "uninstall" removes only that entry. --local writes
+{ "command": "contrast", "args": ["mcp"] } for a global install.`,
+
+  skill: `Usage: contrast skill install   (--dir <skills-dir> | --agent claude [--global]) [--dry-run] [--force]
+       contrast skill uninstall (--dir <skills-dir> | --agent claude [--global]) [--dry-run] [--force]
+       contrast skill show
+
+Install the get-contrast agent skill (SKILL.md) so coding agents know how to
+check and fix contrast with these tools. Nothing is written unless you name a
+location: --dir <dir> writes <dir>/get-contrast/SKILL.md; --agent claude uses
+Claude Code's skills folder (./.claude/skills, or ~/.claude/skills with
+--global). An existing different SKILL.md is not overwritten without --force.
+"uninstall" removes only that file (and its folder if empty), and refuses a file
+that differs from the bundled skill unless --force. "show" prints the skill so
+you can place it anywhere yourself.
+
+Options:
+  --dir DIR              A skills directory (the skill goes in DIR/get-contrast/)
+  --agent claude         Use that agent's conventional skills folder
+  --global               With --agent: the user-level folder instead of the project's
+  --dry-run              Show what would change; write nothing
+  --force                Overwrite / remove a SKILL.md that differs from the bundled one
+  --json, --quiet        As elsewhere`,
 
   tokens: `Usage: contrast tokens <tokens-file | -> --relations <relations.json> [options]
 
@@ -186,6 +217,8 @@ Commands:
   matrix <palette.json | ->         All-pairs contrast matrix
   tokens <file | -> --relations f   Audit design tokens and suggest fixes
   mcp                               Start the MCP server on stdio (for agents)
+  mcp install|uninstall|config      Add or remove the server in an MCP client config
+  skill install|uninstall|show      Install the agent skill (explicit location)
   help [command]                    Show help
 
 Run "contrast help <command>" for options. Exit codes: 0 success or target met,

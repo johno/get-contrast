@@ -10,7 +10,8 @@
         ".next/**",
         "!.next/cache/**",
         "cli-src/**",
-        "mcp-src/**"
+        "mcp-src/**",
+        "skill/**"
       ]
     },
     "test": {
