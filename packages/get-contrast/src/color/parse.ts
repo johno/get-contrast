@@ -12,9 +12,11 @@
 // light-dark(), device-cmyk(), color() spaces other than the ones above,
 // system colors and `currentcolor`.
 //
-// Clamping follows browsers: rgb()/hsl()/hwb()/hex clamp to their gamut at
-// parse time, lab/lch/oklab/oklch clamp lightness and chroma, color() values
-// are kept as written so wide-gamut colors survive. `none` parses as 0.
+// Clamping follows browsers: rgb()/hsl()/hex clamp to their gamut at
+// parse time, hwb() clamps whiteness/blackness below zero only (a sum of 100%
+// or more is normalized when converting), lab/lch/oklab/oklch clamp lightness
+// and chroma, and color() values are kept as written so wide-gamut colors
+// survive. `none` parses as 0. Keywords are matched ASCII case-insensitively.
 //
 // The scanner is linear: it splits on whitespace, commas and `/` and matches
 // each token against one small anchored pattern, so adversarial input cannot
@@ -47,6 +49,15 @@ interface Allowed {
 const NUMERIC = /^([+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?)(%|deg|grad|rad|turn)?$/i;
 const WHITESPACE = /[ \t\r\n\f]+/;
 
+/**
+ * Lowercases ASCII letters only. CSS keywords are ASCII case-insensitive;
+ * String#toLowerCase would also fold characters like U+212A (Kelvin sign) to
+ * "k", making `blacK` parse as `black`.
+ */
+function asciiLower(text: string): string {
+  return text.replace(/[A-Z]+/g, (m) => m.toLowerCase());
+}
+
 function isCssSpace(code: number): boolean {
   return code === 32 || code === 9 || code === 10 || code === 13 || code === 12;
 }
@@ -61,12 +72,12 @@ function trim(text: string): string {
 }
 
 function readToken(raw: string, allowed: Allowed, allowNone: boolean): Token | null {
-  if (raw.toLowerCase() === "none") return allowNone ? { kind: "none" } : null;
+  if (asciiLower(raw) === "none") return allowNone ? { kind: "none" } : null;
   const match = NUMERIC.exec(raw);
   if (!match) return null;
   const value = Number(match[1]);
   if (!Number.isFinite(value)) return null;
-  const unit = match[2] && match[2].toLowerCase();
+  const unit = match[2] && asciiLower(match[2]);
   if (!unit) return allowed.number ? { kind: "number", value } : null;
   if (unit === "%") return allowed.percent ? { kind: "percent", value } : null;
   return allowed.angle
@@ -130,9 +141,9 @@ function splitBody(inner: string, allowLegacy: boolean): Body | string {
 
 // -- Helpers ---------------------------------------------------------------
 
-function parseAlpha(raw: string | null, input: string): number | ParseResult {
+function parseAlpha(raw: string | null, input: string, allowNone: boolean): number | ParseResult {
   if (raw === null) return 1;
-  const token = readToken(raw, { number: true, percent: true }, true);
+  const token = readToken(raw, { number: true, percent: true }, allowNone);
   if (!token) return fail("invalid-component", `invalid alpha value '${raw}'`, input);
   if (token.kind === "none") return 0;
   return token.kind === "percent" ? token.value / 100 : token.value;
@@ -182,7 +193,7 @@ function parseRgb(body: Body, input: string): ParseResult {
   if (body.legacy && kinds.size > 1) {
     return fail("invalid-component", "legacy rgb() cannot mix numbers and percentages", input);
   }
-  const alpha = parseAlpha(body.alpha, input);
+  const alpha = parseAlpha(body.alpha, input, !body.legacy);
   if (isResult(alpha)) return alpha;
   const [r, g, b] = channels.map((c) => clamp(c, 0, 1));
   return succeed(createColor("srgb", [r, g, b], alpha));
@@ -197,7 +208,7 @@ function parseHsl(body: Body, input: string): ParseResult {
   if (!s) return bad("saturation", body.components[1], input);
   const l = readToken(body.components[2], allowed, !body.legacy);
   if (!l) return bad("lightness", body.components[2], input);
-  const alpha = parseAlpha(body.alpha, input);
+  const alpha = parseAlpha(body.alpha, input, !body.legacy);
   if (isResult(alpha)) return alpha;
   return succeed(
     createColor(
@@ -215,12 +226,12 @@ function parseHwb(body: Body, input: string): ParseResult {
   if (!w) return bad("whiteness", body.components[1], input);
   const b = readToken(body.components[2], { number: true, percent: true }, true);
   if (!b) return bad("blackness", body.components[2], input);
-  const alpha = parseAlpha(body.alpha, input);
+  const alpha = parseAlpha(body.alpha, input, !body.legacy);
   if (isResult(alpha)) return alpha;
   return succeed(
     createColor(
       "hwb",
-      [scaled(h, "hwb", 0), clamp(scaled(w, "hwb", 1), 0, 100), clamp(scaled(b, "hwb", 2), 0, 100)],
+      [scaled(h, "hwb", 0), Math.max(0, scaled(w, "hwb", 1)), Math.max(0, scaled(b, "hwb", 2))],
       alpha
     )
   );
@@ -235,7 +246,7 @@ function parseRectangular(space: "lab" | "oklab", body: Body, input: string): Pa
   if (!a) return bad("a axis", body.components[1], input);
   const b = readToken(body.components[2], { number: true, percent: true }, true);
   if (!b) return bad("b axis", body.components[2], input);
-  const alpha = parseAlpha(body.alpha, input);
+  const alpha = parseAlpha(body.alpha, input, !body.legacy);
   if (isResult(alpha)) return alpha;
   return succeed(
     createColor(
@@ -255,7 +266,7 @@ function parsePolar(space: "lch" | "oklch", body: Body, input: string): ParseRes
   if (!c) return bad("chroma", body.components[1], input);
   const h = readToken(body.components[2], { number: true, angle: true }, true);
   if (!h) return bad("hue", body.components[2], input);
-  const alpha = parseAlpha(body.alpha, input);
+  const alpha = parseAlpha(body.alpha, input, !body.legacy);
   if (isResult(alpha)) return alpha;
   return succeed(
     createColor(
@@ -281,7 +292,7 @@ const COLOR_FUNCTION_SPACES: Readonly<Record<string, ColorSpace>> = {
 
 function parseColorFunction(body: Body, input: string): ParseResult {
   const [name, ...rest] = body.components;
-  const spaceName = name.toLowerCase();
+  const spaceName = asciiLower(name);
   const space = Object.prototype.hasOwnProperty.call(COLOR_FUNCTION_SPACES, spaceName)
     ? COLOR_FUNCTION_SPACES[spaceName]
     : undefined;
@@ -297,7 +308,7 @@ function parseColorFunction(body: Body, input: string): ParseResult {
     if (!token) return bad("component", raw, input);
     values.push(token.kind === "percent" ? token.value / 100 : token.kind === "none" ? 0 : token.value);
   }
-  const alpha = parseAlpha(body.alpha, input);
+  const alpha = parseAlpha(body.alpha, input, !body.legacy);
   if (isResult(alpha)) return alpha;
   return succeed(createColor(space, [values[0], values[1], values[2]], alpha));
 }
@@ -346,7 +357,7 @@ export function parseColor(input: unknown): ParseResult {
   if (text.charCodeAt(text.length - 1) !== 41 /* ) */) {
     return fail("invalid-syntax", "missing closing ')'", input);
   }
-  const name = text.slice(0, open).toLowerCase();
+  const name = asciiLower(text.slice(0, open));
   const inner = text.slice(open + 1, -1);
   if (!/^[a-z][a-z0-9-]*$/.test(name)) return fail("invalid-syntax", "not a color function", input);
 
@@ -363,7 +374,7 @@ export function parseColor(input: unknown): ParseResult {
 
   const body = splitBody(inner, legacyCapable);
   if (typeof body === "string") return fail("invalid-component", `${name}(): ${body}`, input);
-  if (body.components[0].toLowerCase() === "from") {
+  if (asciiLower(body.components[0]) === "from") {
     return fail("unsupported-function", "relative color syntax is not supported", input);
   }
 
@@ -399,7 +410,7 @@ export function parseColor(input: unknown): ParseResult {
 }
 
 function parseKeyword(text: string, input: string): ParseResult {
-  const keyword = text.toLowerCase();
+  const keyword = asciiLower(text);
   if (keyword === "transparent") return succeed(createColor("srgb", [0, 0, 0], 0));
   if (Object.prototype.hasOwnProperty.call(NAMED_COLORS, keyword)) {
     const color = parseHex(NAMED_COLORS[keyword as keyof typeof NAMED_COLORS], input);
