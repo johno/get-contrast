@@ -154,3 +154,36 @@ changes (`changed: false`, `already-passes`).
 
 APCA before/after (listed as optional in the roadmap) is not included yet; see
 issue #43.
+
+## `audit(palette, options?)`
+
+The contrast relationships inside a palette, for any renderer (the CLI's
+`audit` and `matrix` commands are thin views over it).
+
+```js
+const { audit } = require("get-contrast");
+
+const r = audit({ ink: "#111", paper: "#fff", brand: "#3b82f6" }, { level: "AA", only: "failing" });
+r.summary;          // { colors: 3, unique: 3, duplicates: 0, pairs: 6, passing: 4, failing: 2 }
+r.matrix;           // r.matrix[a][b]: ratio of r.unique[a] on r.unique[b] (diagonal is 1)
+r.pairs;            // ordered { foreground, background, ratio, ratioText, results, passes, notes? }
+r.recommendations;  // per background: { candidates (best first), best, closest }
+```
+
+- **Input:** an array of colors or `{ name, color }` entries, or a `{ name:
+  color }` map. Order is preserved; object keys follow JavaScript property order.
+- **Duplicates:** colors equal after conversion to sRGB (same alpha) are
+  aliases. The first is canonical (`aliases` lists the rest), repeats get
+  `duplicateOf` and take no part in pairs, so nothing is double-counted. The same
+  *name* on two different colors adds a `duplicate-name` note.
+- **Pairs** are ordered and row-major over the unique colors. For opaque colors
+  the ratio is symmetric; translucent colors are composited with their role
+  (`backdrop` option), so both orders are reported and carry the usual notes.
+  Opaque pairs equal what `check()` returns, to the bit.
+- **Recommendations** use the same ordering as `pick()` (meets the target, then
+  ratio, then input order); tests assert the equivalence.
+- **Options:** `level`, `use`, `minRatio`, `backdrop` (as `check()`), `only`
+  (`"passing"`/`"failing"`: filters `pairs` only), `maxColors` (default 200; the
+  matrix has n(n-1) pairs, and an oversized palette throws a `RangeError` that
+  says how to raise the limit).
+- APCA metadata is not included yet; see issue #43.

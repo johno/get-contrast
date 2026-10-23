@@ -5,6 +5,7 @@
 import { ratio, score, isAccessible, isNotTransparent } from "./legacy.js";
 import { check, wcag, WCAG_THRESHOLDS, thresholdFor } from "./wcag.js";
 import { find, fix } from "./solve.js";
+import { audit } from "./audit.js";
 import { pick } from "./pick.js";
 import { parseColor } from "./color/parse.js";
 import { ColorInputError } from "./errors.js";
@@ -12,6 +13,7 @@ import { ColorInputError } from "./errors.js";
 export { ratio, score, isAccessible, isNotTransparent };
 export { check, wcag, WCAG_THRESHOLDS, thresholdFor };
 export { find, fix };
+export { audit };
 export { pick };
 export { parseColor };
 export { ColorInputError };
@@ -38,6 +40,16 @@ export type {
   OklchValues,
   SolveDirection,
 } from "./solve.js";
+export type {
+  AuditColor,
+  AuditNote,
+  AuditOptions,
+  AuditPair,
+  AuditResult,
+  PaletteEntry,
+  PaletteInput,
+  Recommendation,
+} from "./audit.js";
 export type { PickCandidate, PickOptions, PickReasonCode, PickResult, RankedCandidate } from "./pick.js";
 export type { Color, ColorSpace } from "./color/model.js";
 export type { ParseError, ParseErrorCode, ParseResult } from "./color/parse-result.js";
@@ -54,6 +66,7 @@ export default {
   thresholdFor,
   find,
   fix,
+  audit,
   pick,
   parseColor,
   ColorInputError,

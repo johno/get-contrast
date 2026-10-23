@@ -118,6 +118,7 @@ describe("documented JSON shapes are stable", () => {
     "fix-changed": ["fix", "#ffcc00", "#fff"],
     "fix-unchanged": ["fix", "#000", "#fff"],
     "fix-unreachable": ["fix", "#999", "#777", "--level", "AAA"],
+    "audit-palette": { args: ["audit", "-"], input: '{"ink":"#111","paper":"#fff","white":"white","translucent":"rgb(0 0 0 / .5)"}' },
     "error-input": ["check", "nope", "#fff"],
     "error-usage": ["check", "#000"],
   };
@@ -326,13 +327,17 @@ describe("exit-code matrix", () => {
     ["fix bad option", ["fix", "#777", "#fff", "--direction", "up"], 2],
     ["find reaches target", ["find", "#777", "--against", "#fff"], 0],
     ["find missing --against", ["find", "#777"], 2],
+    ["audit", ["audit", "-"], 0],
+    ["matrix", ["matrix", "-"], 0],
+    ["audit without a palette", ["audit"], 2],
     ["help", ["help", "check"], 0],
     ["help unknown topic", ["help", "nope"], 2],
     ["version", ["--version"], 0],
   ];
   test.each(matrix)("%s -> %d", (_, args, code) => {
     for (const extra of [[], ["--json"]]) {
-      const r = spawn([...args, ...(args[0] === "help" || args[0] === "--version" ? [] : extra)]);
+      const input = args[0] === "audit" || args[0] === "matrix" ? '["#111", "#fff"]' : undefined;
+      const r = spawn([...args, ...(args[0] === "help" || args[0] === "--version" ? [] : extra)], { input });
       expect(r.status).toBe(code);
     }
   });

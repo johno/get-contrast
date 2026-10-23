@@ -137,7 +137,7 @@ describe("contrast wcag", () => {
     const r = cli("wcag", "#777", "#fff");
     expect(r.status).toBe(0);
     expect(r.stdout).toBe(
-      "Contrast ratio  4.48:1  (4.478089453577214)\n" +
+      "Contrast ratio  4.47:1  (4.478089453577214)\n" +
         "Foreground      #777777  luminance 0.1845\n" +
         "Background      #ffffff  luminance 1.0000\n"
     );

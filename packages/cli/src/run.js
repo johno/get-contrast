@@ -48,6 +48,7 @@ function describeError(lib, error) {
  *   version?: string,
  *   stdinIsTTY?: boolean,
  *   readStdin?: () => string,
+ *   readFile?: (path: string) => string,
  * }} [io]
  * @returns {number} exit code
  */
@@ -123,9 +124,11 @@ function run(lib, argv, io = defaultIo()) {
     }
   };
 
+  const readFile = (file) => (io.readFile || ((f) => require("node:fs").readFileSync(f, "utf8")))(file);
+
   let outcome;
   try {
-    outcome = COMMANDS[first](lib, parsed, { readStdin });
+    outcome = COMMANDS[first](lib, parsed, { readStdin, readFile });
   } catch (error) {
     const described = describeError(lib, error);
     return fail(described, described.exitCode === EXIT.USAGE && !json ? usageHint : undefined);
