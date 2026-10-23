@@ -2,9 +2,9 @@
 
 This document records what `get-contrast@3.0.1` does, so v4 can stay
 backwards-compatible. It describes observed behavior, not ideal behavior.
-Executable characterization tests live in `compat/v3-contract.test.js`
+Executable characterization tests live in `packages/get-contrast/compat/v3-contract.test.js`
 (`bun run test:compat`). A fixture-driven golden suite
-(`compat/golden.test.js`, fixtures in `compat/fixtures/`) replays a large
+(`packages/get-contrast/compat/golden.test.js`, fixtures in `packages/get-contrast/compat/fixtures/`) replays a large
 input matrix and the CLI; after an intentional change run
 `bun run compat:update` and review the fixture diff.
 

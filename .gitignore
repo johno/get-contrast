@@ -1,1 +1,7 @@
 node_modules
+.turbo
+.next
+dist
+next-env.d.ts
+*.tsbuildinfo
+packages/get-contrast/cli-run.js

@@ -6,6 +6,10 @@ const { spawnSync } = require("node:child_process");
 
 const root = path.join(__dirname, "..");
 
+// cli.js delegates to cli-run.js, which is copied from packages/cli. Make sure
+// it exists so these tests also work when run directly with `bun test`.
+require("../scripts/build-cli");
+
 // The "unparseable input" message is the JS engine's own null-dereference
 // text (V8 vs JavaScriptCore). Normalize it so fixtures are engine-neutral.
 const ENGINE_NULL_MESSAGE =
