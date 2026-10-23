@@ -63,16 +63,30 @@ function parseBlocks(css: string): Block[] {
   return blocks;
 }
 
+/** Selectors compare equal regardless of attribute-value quotes and extra spaces. */
+const normalize = (selector: string) => selector.replace(/\s+/g, " ").replace(/["']/g, "").trim();
+
 export function parseCssTokens(text: string, scope = ":root"): TokenDefinition[] {
   const blocks = parseBlocks(stripComments(text));
-  const applies = (block: Block, wanted: string) => block.selectors.includes(wanted) || block.atRules.includes(wanted);
+  const wantedScope = normalize(scope);
+  const applies = (block: Block, wanted: string) =>
+    block.selectors.some((s) => normalize(s) === wanted) || block.atRules.some((a) => normalize(a) === wanted);
 
   // Base: top-level :root. Then the scope's own declarations on top.
   const layers: { block: Block; selector: string }[] = [];
   for (const block of blocks) if (block.atRules.length === 0 && block.selectors.includes(":root")) layers.push({ block, selector: ":root" });
-  if (scope !== ":root") {
-    for (const block of blocks) {
-      if (applies(block, scope)) layers.push({ block, selector: block.selectors.includes(scope) ? scope : block.selectors[0] });
+  if (wantedScope !== ":root") {
+    const matching = blocks.filter((block) => applies(block, wantedScope));
+    if (matching.length === 0) {
+      // A scope that matches nothing would silently audit the base theme.
+      const available = [...new Set(blocks.flatMap((b) => [...b.atRules, ...b.selectors]))].filter((x) => x !== ":root");
+      throw new TokenSourceError(
+        "unknown-scope",
+        `no rule matches the scope "${scope}"${available.length ? `; scopes in this file: ${available.map((a) => `"${a}"`).join(", ")}` : ""}`
+      );
+    }
+    for (const block of matching) {
+      layers.push({ block, selector: block.selectors.find((s) => normalize(s) === wantedScope) ?? block.selectors[0] });
     }
   }
 

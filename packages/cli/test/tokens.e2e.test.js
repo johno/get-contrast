@@ -179,6 +179,20 @@ describe("CSS custom properties", () => {
     expect(json(media).result.relations[0].background.hex).toBe("#101010");
   });
 
+  test("an unknown scope is an error that lists the real ones (never a silent base-theme audit)", () => {
+    const r = cli(["tokens", fx("theme.css"), "--scope", "[data-theme=sepia]", "--relations", relations]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toContain('no rule matches the scope "[data-theme=sepia]"');
+    expect(r.stderr).toContain("scopes in this file:");
+  });
+
+  test("scope quoting does not matter", () => {
+    const quoted = cli(["tokens", fx("theme.css"), "--scope", '[data-theme="dark"]', "--relations", relations]);
+    const bare = cli(["tokens", fx("theme.css"), "--scope", "[data-theme=dark]", "--relations", relations]);
+    expect(bare).toEqual(quoted);
+  });
+
   test("a format override and stdin", () => {
     const css = fs.readFileSync(fx("theme.css"), "utf8");
     const r = cli(["tokens", "-", "--format", "css", "--relations", relations], css);

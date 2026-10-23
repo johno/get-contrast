@@ -97,7 +97,10 @@ Token files:
   / `var(--other, fallback)` references. Names include the leading `--` (it may
   be omitted in relations). `:root` applies first and `--scope` (a selector such
   as `[data-theme=dark]`, or an at-rule such as `@media (prefers-color-scheme:
-  dark)`) overrides it, like the cascade. Nested at-rules are flattened.
+  dark)`) overrides it, like the cascade. Quotes and extra spaces in a scope do not matter
+  (`[data-theme=dark]` matches `[data-theme="dark"]`), and a scope that matches no
+  rule is an error that lists the scopes in the file, never a silent audit of the
+  base theme. Nested at-rules are flattened.
 
 For each **failing** relation the report shows both tokens and their resolved
 values, the current ratio and the required one, and a fix, **existing tokens

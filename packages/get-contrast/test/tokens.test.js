@@ -81,6 +81,29 @@ describe("CSS token parsing", () => {
     expect(set.tokens.find((t) => t.name === "--text-muted").source.selector).toBe('[data-theme="dark"]');
   });
 
+  test("scopes compare without attribute-value quotes or extra spaces", () => {
+    const quoted = parseTokens(css, { scope: '[data-theme="dark"]' });
+    for (const scope of ["[data-theme=dark]", "[data-theme='dark']", "  [data-theme=dark]  "]) {
+      expect(parseTokens(css, { scope })).toEqual(quoted);
+    }
+    expect(parseTokens(css, { scope: "@media (prefers-color-scheme:  dark)" }).tokens.find((t) => t.name === "--surface-default").value).toBe("#101010");
+  });
+
+  test("a scope that matches nothing is an error, not the base theme", () => {
+    let error;
+    try {
+      parseTokens(css, { scope: "[data-theme=sepia]" });
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeInstanceOf(TokenSourceError);
+    expect(error.code).toBe("unknown-scope");
+    expect(error.message).toContain('no rule matches the scope "[data-theme=sepia]"');
+    expect(error.message).toContain('scopes in this file: "[data-theme="dark"]", "@media (prefers-color-scheme: dark)"');
+    // with nothing else in the file, the message does not invent a list
+    expect(() => parseTokens(":root { --a: #fff; }", { scope: "[x]" })).toThrow(/no rule matches the scope "\[x\]"$/);
+  });
+
   test("an at-rule scope selects the blocks inside it", () => {
     const set = parseTokens(css, { scope: "@media (prefers-color-scheme: dark)" });
     expect(set.tokens.find((t) => t.name === "--surface-default").value).toBe("#101010");

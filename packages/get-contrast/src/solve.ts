@@ -349,8 +349,12 @@ function solve({ original, other, role }: SolveInput, options: FindOptions): Fix
     const dimensions: ChangedDimension[] = [];
     if (Math.abs(after.l - l0) > 5e-4) dimensions.push("lightness");
     if (Math.abs(after.c - chroma0) > 2e-3) dimensions.push("chroma");
+    // Hue only counts as changed when it moves the color visibly: the a/b shift
+    // it causes, 2 * c * sin(delta / 2), must exceed 0.01 (8-bit rounding turns
+    // a barely tinted gray's hue by degrees without any visible effect).
     const hueDelta = Math.abs(after.h - hue);
-    if (after.c > 0.01 && chroma0 > 0.01 && Math.min(hueDelta, 360 - hueDelta) > 1) dimensions.push("hue");
+    const turn = (Math.min(hueDelta, 360 - hueDelta) * Math.PI) / 180;
+    if (2 * Math.min(after.c, chroma0) * Math.sin(turn / 2) > 0.01) dimensions.push("hue");
 
     if (dimensions.includes("chroma")) {
       notes.push(

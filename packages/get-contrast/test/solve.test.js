@@ -64,6 +64,12 @@ describe("fix() basics", () => {
     expect(r.target).toEqual(r.original.check.target);
   });
 
+  test("a barely tinted gray changes lightness only; 8-bit hue wobble is not reported", () => {
+    const r = fix("#9ca3af", "#ffffff"); // oklch chroma ~0.02: its hue turns by degrees when rounded to 8-bit
+    expect(r.reached).toBe(true);
+    expect(r.change.dimensions).toEqual(["lightness"]);
+  });
+
   test("dark yellow needs chroma reduced to fit the gamut, and says so", () => {
     const r = fix("#ffcc00", "#ffffff");
     expect(r.reached).toBe(true);

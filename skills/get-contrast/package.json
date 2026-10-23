@@ -1,0 +1,13 @@
+{
+  "name": "@get-contrast/skill",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The get-contrast agent skill, its fixtures, and the tests that keep its instructions executable.",
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "get-contrast": "workspace:*",
+    "@get-contrast/cli": "workspace:*"
+  }
+}

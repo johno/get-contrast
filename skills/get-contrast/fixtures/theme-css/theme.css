@@ -1,0 +1,13 @@
+:root {
+  --surface: #ffffff;
+  --text: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+}
+
+[data-theme="dark"] {
+  --surface: #121212;
+  --text: #f5f5f5;
+  --text-secondary: #b3b3b3;
+  --text-muted: #5a5a5a;
+}
