@@ -19,10 +19,36 @@ function defaultIo() {
   };
 }
 
+/** Version of the --json envelope. Bump only for breaking changes (see docs/cli.md). */
+const SCHEMA_VERSION = 1;
+
+/** Maps anything thrown by a command to the documented error object. */
+function describeError(lib, error) {
+  if (error instanceof UsageError) return { exitCode: EXIT.USAGE, error: { code: "usage", message: error.message } };
+  if (lib.ColorInputError && error instanceof lib.ColorInputError) {
+    return {
+      exitCode: EXIT.USAGE,
+      error: { code: error.code, message: error.message, role: error.role, input: error.input },
+    };
+  }
+  if (error instanceof RangeError) return { exitCode: EXIT.USAGE, error: { code: "invalid-option", message: error.message } };
+  return {
+    exitCode: EXIT.FAILURE,
+    error: { code: "internal", message: `unexpected failure: ${error && error.message ? error.message : error}` },
+  };
+}
+
 /**
  * @param {any} lib the get-contrast library
  * @param {string[]} argv like process.argv: [node, script, ...args]
- * @param {{ stdout: {write(s: string): unknown, isTTY?: boolean}, stderr: {write(s: string): unknown, isTTY?: boolean}, env: Record<string, string | undefined>, version?: string }} [io]
+ * @param {{
+ *   stdout: {write(s: string): unknown, isTTY?: boolean},
+ *   stderr: {write(s: string): unknown, isTTY?: boolean},
+ *   env: Record<string, string | undefined>,
+ *   version?: string,
+ *   stdinIsTTY?: boolean,
+ *   readStdin?: () => string,
+ * }} [io]
  * @returns {number} exit code
  */
 function run(lib, argv, io = defaultIo()) {
@@ -54,44 +80,65 @@ function run(lib, argv, io = defaultIo()) {
     return EXIT.OK;
   }
 
-  const parsed = parseArgs(argv.slice(3), SPECS[first]);
-  if (parsed.error) {
-    err(`error: ${parsed.error}`);
-    err(`Run "contrast help ${first}" for usage.`);
-    return EXIT.USAGE;
-  }
+  const rest = argv.slice(3);
+  // Decided before parsing so even usage errors are reported as JSON when asked.
+  const json = rest.includes("--json") || rest.includes("--json=true");
+
+  const style = (stream) => createStyle(colorEnabled({ isTTY: stream.isTTY, env: io.env }, parsedColorFlag));
+  let parsedColorFlag;
+
+  /** Report an error: JSON envelope on stdout in --json mode, a line on stderr otherwise. */
+  const fail = ({ exitCode, error }, hint) => {
+    if (json) {
+      out(JSON.stringify({ schema: SCHEMA_VERSION, command: first, exitCode, error }, null, 2));
+    } else {
+      err(`${style(io.stderr).red("error:")} ${error.message}`);
+      if (hint) err(hint);
+    }
+    return exitCode;
+  };
+  const usageHint = `Run "contrast help ${first}" for usage.`;
+
+  const parsed = parseArgs(rest, SPECS[first]);
+  parsedColorFlag = parsed.flags.color;
+  if (parsed.error) return fail({ exitCode: EXIT.USAGE, error: { code: "usage", message: parsed.error } }, usageHint);
   if (parsed.flags.help) {
     out(HELP[first]);
     return EXIT.OK;
+  }
+  if (parsed.flags.json && parsed.flags.quiet) {
+    return fail({ exitCode: EXIT.USAGE, error: { code: "usage", message: "--json and --quiet cannot be combined" } }, usageHint);
   }
   if (parsed.flags.warnings === false) {
     // Honored by the library's warning helper (see docs/legacy-warnings.md).
     io.env.GET_CONTRAST_NO_WARNINGS = "1";
   }
 
-  const style = createStyle(colorEnabled({ isTTY: io.stdout.isTTY, env: io.env }, parsed.flags.color));
-  const errStyle = createStyle(colorEnabled({ isTTY: io.stderr.isTTY, env: io.env }, parsed.flags.color));
+  const readStdin = () => {
+    if (io.stdinIsTTY) throw new UsageError("candidates were requested from stdin (-), but stdin is a terminal");
+    try {
+      return (io.readStdin || (() => require("node:fs").readFileSync(0, "utf8")))();
+    } catch (error) {
+      throw new UsageError(`could not read stdin: ${error.message}`);
+    }
+  };
 
+  let outcome;
   try {
-    return COMMANDS[first](lib, parsed, { out, style });
+    outcome = COMMANDS[first](lib, parsed, { readStdin });
   } catch (error) {
-    if (error instanceof UsageError) {
-      err(`${errStyle.red("error:")} ${error.message}`);
-      err(`Run "contrast help ${first}" for usage.`);
-      return EXIT.USAGE;
-    }
-    if (lib.ColorInputError && error instanceof lib.ColorInputError) {
-      err(`${errStyle.red("error:")} ${error.message}`);
-      return EXIT.USAGE;
-    }
-    if (error instanceof RangeError) {
-      err(`${errStyle.red("error:")} ${error.message}`);
-      return EXIT.USAGE;
-    }
-    err(`${errStyle.red("error:")} unexpected failure: ${error && error.message ? error.message : error}`);
-    return EXIT.FAILURE;
+    const described = describeError(lib, error);
+    return fail(described, described.exitCode === EXIT.USAGE && !json ? usageHint : undefined);
   }
+
+  if (json) {
+    out(JSON.stringify({ schema: SCHEMA_VERSION, command: first, exitCode: outcome.exitCode, result: outcome.result }, null, 2));
+  } else if (!parsed.flags.quiet) {
+    outcome.human(out, style(io.stdout));
+  }
+  return outcome.exitCode;
 }
 
 module.exports = run;
 module.exports.EXIT = EXIT;
+module.exports.SCHEMA_VERSION = SCHEMA_VERSION;

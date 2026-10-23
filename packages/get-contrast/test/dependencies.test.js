@@ -47,7 +47,11 @@ test("published code only imports relative modules", () => {
       .readFileSync(file, "utf8")
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/^\s*\/\/.*$/gm, "");
+    // The CLI runs on Node, so it may use Node built-ins; the library never may
+    // (test/consumers.test.js enforces that for src/).
+    const isCli = file.startsWith(path.join(root, "cli-src")) || path.basename(file) === "cli.js";
     for (const [, spec] of text.matchAll(specifier)) {
+      if (isCli && spec.startsWith("node:")) continue;
       if (!spec.startsWith(".") && !allowed.has(spec)) {
         offenders.push(`${path.relative(root, file)}: ${spec}`);
       }

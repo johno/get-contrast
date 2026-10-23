@@ -116,6 +116,16 @@ try {
   check(failing.status === 1, `contrast check (failing) should exit 1: ${JSON.stringify(failing)}`);
   const invalid = inProject(bin, ["check", "nope", "#fff"]);
   check(invalid.status === 2 && invalid.stdout === "" && invalid.stderr.startsWith("error: "), `contrast check (invalid) should exit 2: ${JSON.stringify(invalid)}`);
+  const asJson = inProject(bin, ["check", "#767676", "white", "--json"]);
+  let envelope = null;
+  try {
+    envelope = JSON.parse(asJson.stdout);
+  } catch {}
+  check(asJson.status === 0 && asJson.stderr === "" && envelope && envelope.schema === 1 && envelope.result.ratio > 4.5, `contrast check --json: ${JSON.stringify(asJson)}`);
+  const piped = inProject(bin, ["pick", "white", "-"], { input: "#111111\n#767676\n" });
+  check(piped.status === 0 && piped.stdout.includes("Winner: #111111"), `contrast pick (stdin): ${JSON.stringify(piped)}`);
+  const quiet = inProject(bin, ["check", "#777", "#fff", "--quiet"]);
+  check(quiet.status === 1 && quiet.stdout === "" && quiet.stderr === "", `contrast check --quiet: ${JSON.stringify(quiet)}`);
   const version = inProject(bin, ["--version"]);
   check(version.stdout.trim() === manifest.version, `contrast --version: ${JSON.stringify(version)}`);
   const bad = inProject(bin, ["#777"]);

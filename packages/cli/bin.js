@@ -5,5 +5,6 @@ const code = require("./src/run")(lib, process.argv, {
   stderr: process.stderr,
   env: process.env,
   version: require("get-contrast/package.json").version,
+  stdinIsTTY: Boolean(process.stdin.isTTY),
 });
 if (code) process.exitCode = code;
