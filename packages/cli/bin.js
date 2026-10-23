@@ -6,6 +6,7 @@ const code = require("./src/run")(lib, process.argv, {
   env: process.env,
   version: require("get-contrast/package.json").version,
   stdinIsTTY: Boolean(process.stdin.isTTY),
+  skillText: () => require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "..", "skills", "get-contrast", "SKILL.md"), "utf8"),
   startMcp: () => require("@get-contrast/mcp").serve(lib, { version: require("get-contrast/package.json").version }),
 });
 if (code) process.exitCode = code;

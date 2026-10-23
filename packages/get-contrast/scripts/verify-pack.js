@@ -36,6 +36,7 @@ try {
     "cli.js",
     "cli-src/run.js",
     "mcp-src/index.js",
+    "skill/SKILL.md",
     "dist/cjs/index.js",
     "dist/cjs/index.d.ts",
     "dist/esm/index.js",
@@ -47,6 +48,7 @@ try {
   const allowed = [
     /^(package\.json|readme\.md|license|index\.js|warnings\.js|cli\.js)$/,
     /^(cli|mcp)-src\/[\w.-]+\.js$/,
+    /^skill\/SKILL\.md$/,
     /^dist\/(cjs|esm)\/([\w-]+\/)*[\w.-]+\.(js|d\.ts)$/,
     /^dist\/esm\/package\.json$/,
   ];
@@ -147,6 +149,26 @@ try {
     mcp.status === 0 && mcp.stderr === "" && mcpLines.length === 3 && mcpLines[1].result.tools.length === 6 && mcpLines[2].result.structuredContent.status === "fail",
     `contrast mcp: ${JSON.stringify(mcp)}`
   );
+  // Skill and MCP installation from the installed tarball: explicit, inspectable, reversible.
+  const skillDry = inProject(bin, ["skill", "install", "--dir", "agent-skills", "--dry-run"]);
+  check(skillDry.status === 0 && !fs.existsSync(path.join(project, "agent-skills")), `contrast skill install --dry-run wrote something: ${JSON.stringify(skillDry)}`);
+  const skillInstall = inProject(bin, ["skill", "install", "--dir", "agent-skills"]);
+  const installedSkill = path.join(project, "agent-skills", "get-contrast", "SKILL.md");
+  check(
+    skillInstall.status === 0 && fs.existsSync(installedSkill) && fs.readFileSync(installedSkill, "utf8").startsWith("---\nname: get-contrast\n"),
+    `contrast skill install: ${JSON.stringify(skillInstall)}`
+  );
+  const skillRemove = inProject(bin, ["skill", "uninstall", "--dir", "agent-skills"]);
+  check(skillRemove.status === 0 && !fs.existsSync(installedSkill), `contrast skill uninstall: ${JSON.stringify(skillRemove)}`);
+  fs.writeFileSync(path.join(project, "mcp.json"), JSON.stringify({ mcpServers: { other: { command: "x" } } }));
+  const mcpInstall = inProject(bin, ["mcp", "install", "--file", "mcp.json"]);
+  const mcpConfig = JSON.parse(fs.readFileSync(path.join(project, "mcp.json"), "utf8"));
+  check(
+    mcpInstall.status === 0 && mcpConfig.mcpServers.other.command === "x" && mcpConfig.mcpServers["get-contrast"].args.join(" ") === "-y get-contrast mcp",
+    `contrast mcp install: ${JSON.stringify(mcpInstall)}`
+  );
+  const mcpRemove = inProject(bin, ["mcp", "uninstall", "--file", "mcp.json"]);
+  check(mcpRemove.status === 0 && !("get-contrast" in JSON.parse(fs.readFileSync(path.join(project, "mcp.json"), "utf8")).mcpServers), `contrast mcp uninstall: ${JSON.stringify(mcpRemove)}`);
   const quiet = inProject(bin, ["check", "#777", "#fff", "--quiet"]);
   check(quiet.status === 1 && quiet.stdout === "" && quiet.stderr === "", `contrast check --quiet: ${JSON.stringify(quiet)}`);
   const version = inProject(bin, ["--version"]);

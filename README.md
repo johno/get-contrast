@@ -34,7 +34,7 @@ that is not a `4.x.y-<tag>` version and dry-runs unless told to publish.
 
 `contrast` is published as part of `get-contrast`. `packages/cli` owns its
 implementation; `packages/get-contrast/scripts/build-cli.js` copies it into the
-package at build/pack time. See [docs/cli.md](docs/cli.md) and [docs/mcp.md](docs/mcp.md).
+package at build/pack time. See [docs/cli.md](docs/cli.md), [docs/mcp.md](docs/mcp.md) and [docs/agents.md](docs/agents.md) (installing the skill and MCP server).
 
 v3 behavior is frozen by the suite in `packages/get-contrast/compat`; see
 [docs/v3-compatibility.md](docs/v3-compatibility.md).

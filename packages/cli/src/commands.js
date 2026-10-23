@@ -7,15 +7,8 @@
 
 const { readPalette, InputError } = require("./palette-input");
 
-const EXIT = Object.freeze({ OK: 0, NOT_MET: 1, USAGE: 2, FAILURE: 3 });
-
-class UsageError extends Error {
-  /** @param {string} message @param {string} [code] error.code in --json output */
-  constructor(message, code = "usage") {
-    super(message);
-    this.code = code;
-  }
-}
+const { EXIT, UsageError } = require("./errors");
+const { skill, mcpConfig } = require("./install");
 
 const SHARED = {
   color: { name: "color", type: "boolean" },
@@ -41,7 +34,24 @@ const PALETTE = {
   "max-colors": { name: "max-colors", type: "string" },
 };
 
+const INSTALL = {
+  dir: { name: "dir", type: "string" },
+  agent: { name: "agent", type: "string", values: ["claude"] },
+  global: { name: "global", type: "boolean" },
+  "dry-run": { name: "dry-run", type: "boolean" },
+  force: { name: "force", type: "boolean" },
+};
+
 const SPECS = {
+  skill: { ...SHARED, ...INSTALL },
+  "mcp-config": {
+    ...SHARED,
+    ...INSTALL,
+    file: { name: "file", type: "string" },
+    key: { name: "key", type: "string" },
+    name: { name: "name", type: "string" },
+    local: { name: "local", type: "boolean" },
+  },
   tokens: {
     ...SHARED,
     ...TARGET,
@@ -468,4 +478,4 @@ function tokens(lib, { positionals, flags }, ctx) {
   };
 }
 
-module.exports = { EXIT, UsageError, SPECS, COMMANDS: { check, wcag, pick, find, fix, audit, matrix, tokens } };
+module.exports = { EXIT, UsageError, SPECS, COMMANDS: { check, wcag, pick, find, fix, audit, matrix, tokens, skill: (lib, parsed, ctx) => skill(parsed, ctx), "mcp-config": (lib, parsed, ctx) => mcpConfig(parsed, ctx) } };

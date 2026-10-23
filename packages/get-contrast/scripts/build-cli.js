@@ -13,3 +13,9 @@ for (const [from, to] of [
   fs.rmSync(dest, { recursive: true, force: true });
   fs.cpSync(src, dest, { recursive: true });
 }
+
+// The agent skill ships with the package so `contrast skill install` works offline.
+const skillSource = path.join(__dirname, "..", "..", "..", "skills", "get-contrast", "SKILL.md");
+const skillDest = path.join(__dirname, "..", "skill", "SKILL.md");
+fs.mkdirSync(path.dirname(skillDest), { recursive: true });
+fs.copyFileSync(skillSource, skillDest);

@@ -1,0 +1,6 @@
+/* Which semantic tokens are used together is how relations.json was written. */
+.card { background: var(--surface-default); }
+.card p { color: var(--text-default); }
+.card .caption { color: var(--text-secondary); }
+.card .meta { color: var(--text-muted); }
+.card a { color: var(--link-default); }

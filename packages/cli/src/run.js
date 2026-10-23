@@ -7,9 +7,11 @@ const { parseArgs } = require("./args");
 const { colorEnabled, createStyle } = require("./style");
 const { EXIT, UsageError, SPECS, COMMANDS } = require("./commands");
 const { HELP, mainHelp } = require("./help");
+const path = require("node:path");
 
 const MODERN = Object.keys(COMMANDS);
-const COMMAND_NAMES = [...MODERN, "mcp"];
+// "mcp-config" is the internal name for `contrast mcp install|uninstall|config`.
+const COMMAND_NAMES = [...MODERN.filter((name) => name !== "mcp-config"), "mcp"];
 
 function defaultIo() {
   return {
@@ -51,6 +53,9 @@ function describeError(lib, error) {
  *   readStdin?: () => string,
  *   readFile?: (path: string) => string,
  *   startMcp?: () => void,
+ *   skillText?: () => string,
+ *   cwd?: string,
+ *   homedir?: string,
  * }} [io]
  * @returns {number} exit code
  */
@@ -83,26 +88,31 @@ function run(lib, argv, io = defaultIo()) {
     return EXIT.OK;
   }
 
+  let command = first; // the internal command name; `contrast mcp install` is "mcp-config"
+  let rest = argv.slice(3);
   if (first === "mcp") {
     if (argv[3] === "--help" || argv[3] === "-h") {
       out(HELP.mcp);
       return EXIT.OK;
     }
-    if (argv.length > 3) {
-      err(`error: unknown argument "${argv[3]}". "contrast mcp" takes no arguments.`);
+    if (["install", "uninstall", "config"].includes(argv[3])) {
+      command = "mcp-config";
+    } else if (argv.length > 3) {
+      err(`error: unknown argument "${argv[3]}". Use "contrast mcp" to start the server, or "contrast mcp install|uninstall|config".`);
       err('Run "contrast help mcp" for usage.');
       return EXIT.USAGE;
+    } else {
+      if (!io.startMcp) {
+        err("error: the MCP server is not available in this build.");
+        return EXIT.FAILURE;
+      }
+      // Serves JSON-RPC on stdio until stdin closes; stdout carries protocol messages only.
+      io.startMcp();
+      return EXIT.OK;
     }
-    if (!io.startMcp) {
-      err("error: the MCP server is not available in this build.");
-      return EXIT.FAILURE;
-    }
-    // Serves JSON-RPC on stdio until stdin closes; stdout carries protocol messages only.
-    io.startMcp();
-    return EXIT.OK;
   }
+  const display = first === "mcp" ? `mcp ${argv[3]}` : first;
 
-  const rest = argv.slice(3);
   // Decided before parsing so even usage errors are reported as JSON when asked.
   const json = rest.includes("--json") || rest.includes("--json=true");
 
@@ -112,7 +122,7 @@ function run(lib, argv, io = defaultIo()) {
   /** Report an error: JSON envelope on stdout in --json mode, a line on stderr otherwise. */
   const fail = ({ exitCode, error }, hint) => {
     if (json) {
-      out(JSON.stringify({ schema: SCHEMA_VERSION, command: first, exitCode, error }, null, 2));
+      out(JSON.stringify({ schema: SCHEMA_VERSION, command: display, exitCode, error }, null, 2));
     } else {
       err(`${style(io.stderr).red("error:")} ${error.message}`);
       if (hint) err(hint);
@@ -121,7 +131,7 @@ function run(lib, argv, io = defaultIo()) {
   };
   const usageHint = `Run "contrast help ${first}" for usage.`;
 
-  const parsed = parseArgs(rest, SPECS[first]);
+  const parsed = parseArgs(rest, SPECS[command]);
   parsedColorFlag = parsed.flags.color;
   if (parsed.error) return fail({ exitCode: EXIT.USAGE, error: { code: "usage", message: parsed.error } }, usageHint);
   if (parsed.flags.help) {
@@ -149,14 +159,22 @@ function run(lib, argv, io = defaultIo()) {
 
   let outcome;
   try {
-    outcome = COMMANDS[first](lib, parsed, { readStdin, readFile });
+    outcome = COMMANDS[command](lib, parsed, {
+      readStdin,
+      readFile,
+      cwd: io.cwd || process.cwd(),
+      homedir: io.homedir || require("node:os").homedir(),
+      skillText: io.skillText || (() => {
+        throw new UsageError("the agent skill is not bundled in this build");
+      }),
+    });
   } catch (error) {
     const described = describeError(lib, error);
     return fail(described, described.exitCode === EXIT.USAGE && !json ? usageHint : undefined);
   }
 
   if (json) {
-    out(JSON.stringify({ schema: SCHEMA_VERSION, command: first, exitCode: outcome.exitCode, result: outcome.result, ...(outcome.patch ? { patch: outcome.patch } : {}) }, null, 2));
+    out(JSON.stringify({ schema: SCHEMA_VERSION, command: display, exitCode: outcome.exitCode, result: outcome.result, ...(outcome.patch ? { patch: outcome.patch } : {}) }, null, 2));
   } else if (!parsed.flags.quiet) {
     outcome.human(out, style(io.stdout));
   }
