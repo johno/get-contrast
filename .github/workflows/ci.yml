@@ -37,6 +37,9 @@ jobs:
       - name: CLI tests
         run: bun run test
         working-directory: packages/cli
+      - name: Agent skill tests (fixture tasks replayed against the CLI)
+        run: bun run test
+        working-directory: skills/get-contrast
       - name: Pack, inspect, and smoke-test the tarball
         run: bun run verify:pack
         working-directory: packages/get-contrast
