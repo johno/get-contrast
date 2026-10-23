@@ -1,11 +1,8 @@
 // Legacy (v3) API. Behavior here is frozen by the compatibility suite in
 // compat/ and documented in docs/v3-compatibility.md. Do not "fix" quirks in
 // this file; corrected behavior belongs in new APIs.
-import rgb from "rgb";
-import * as wcag from "wcag-contrast";
-import isBlank from "is-blank";
-import isNamedCssColor from "is-named-css-color";
-import cssColorNames from "css-color-names";
+import { isLegacyNamedColor, lookupNamedColor, parseLegacyColor } from "./legacy-parse";
+import { contrastRatio, scoreForRatio } from "./legacy-wcag";
 import type { LegacyOptions, LegacyScore } from "./types";
 
 /** Channel values as the strings they were parsed from, e.g. ["255", "0", "0"]. */
@@ -19,7 +16,7 @@ export function ratio(
   const channelsOne = getRgbTriplet(colorOne, options);
   const channelsTwo = getRgbTriplet(colorTwo, options);
 
-  return wcag.rgb(channelsOne, channelsTwo);
+  return contrastRatio(channelsOne, channelsTwo);
 }
 
 export function score(
@@ -27,15 +24,7 @@ export function score(
   colorTwo: string,
   options?: LegacyOptions | null
 ): LegacyScore {
-  const wcagScore = wcag.score(ratio(colorOne, colorTwo, options));
-
-  if (isBlank(wcagScore)) {
-    // Unreachable in practice (wcag.score always returns a non-empty string),
-    // but v3 returned "F" here, so keep it.
-    return "F" as LegacyScore;
-  } else {
-    return wcagScore as LegacyScore;
-  }
+  return scoreForRatio(ratio(colorOne, colorTwo, options));
 }
 
 export function isAccessible(
@@ -56,8 +45,10 @@ function getRgbTriplet(
 
   let color = providedColor.toLowerCase();
 
-  if (isNamedCssColor(color)) {
-    color = cssColorNames[color];
+  if (isLegacyNamedColor(color)) {
+    // Detection is loose (see legacy-parse.ts), so the exact lookup can miss;
+    // the resulting `undefined` then fails to parse, as it did in v3.
+    color = lookupNamedColor(color) as string;
   }
 
   color = isNotTransparent(color, options);
@@ -75,12 +66,12 @@ export function isNotTransparent(
 ): string {
   options = options || {};
 
-  // Convert to RGB. `rgb()` returns null for input it cannot parse, and v3
+  // Convert to RGB. `parseLegacyColor()` returns null for input it cannot parse, and v3
   // then fails with a TypeError on the `.match` below. That is the observable
   // contract for invalid input, so the null is deliberately not handled.
   // (JavaScriptCore words that TypeError using the variable name, so keep it
   // `color` to match v3's message on both engines.)
-  color = rgb(color) as string;
+  color = parseLegacyColor(color) as string;
   // Check if the rgb returned color is rgba and if the 'a' value is 0.
   const cArray = color.match(/\((.*)\)/)![1].split(",");
   if (cArray.length == 4 && cArray[3] == "0" && !options.ignoreAlpha) {

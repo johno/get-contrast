@@ -1,6 +1,6 @@
 // Entry point. Re-exports the legacy API from the compiled sources under
 // dist/ as plain CommonJS properties, so that:
-//  - `require("get-contrast")` returns exactly { ratio, score, isAccessible,
+//  - requiring this package returns exactly { ratio, score, isAccessible,
 //    isNotTransparent } with no `__esModule` marker (default imports of the
 //    module keep working in transpiled code), and
 //  - Node can detect the named exports for ESM `import { ratio } from ...`.

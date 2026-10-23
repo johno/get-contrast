@@ -53,7 +53,7 @@ Threshold is fixed (see #15). May warn: disagreement with `score` at 4.5.
 
 ### `isNotTransparent(color, options?)` (Guaranteed)
 
-Parses the color with the `rgb` package and returns a **normalized string**
+Parses the color with the legacy parser (a port of `rgb@0.1.0`, see `src/legacy-parse.ts`) and returns a **normalized string**
 (`"rgb(r,g,b)"` or `"rgba(r,g,b,a)"`, no spaces). Throws `TypeError`
 `get-contrast cannot contrast transparent colors` when alpha is `0`, unless
 `options.ignoreAlpha` is truthy. Despite the name it returns a string, not a
