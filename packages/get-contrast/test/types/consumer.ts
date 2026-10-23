@@ -9,6 +9,8 @@ import {
   type LegacyScore,
   check,
   wcag,
+  pick,
+  type PickResult,
   parseColor,
   thresholdFor,
   ColorInputError,
@@ -55,4 +57,10 @@ check(1, "#fff");
 result.ratio = 1;
 const err: ColorInputError | null = null;
 
-export { r, s, a, t, bad, passes, ratioText, aa, hex, fromParsed, theColor, threshold, err };
+const picked: PickResult = pick("#fff", ["#000", { name: "ink", color: "#111" }], { level: "AAA" });
+const winnerName: string | undefined = picked.winner?.name;
+const reason: string = picked.reason;
+// @ts-expect-error candidates must be an array
+pick("#fff", "#000");
+
+export { picked, winnerName, reason, r, s, a, t, bad, passes, ratioText, aa, hex, fromParsed, theColor, threshold, err };

@@ -4,11 +4,13 @@
 // handed ESM importers the CommonJS `module.exports` object.
 import { ratio, score, isAccessible, isNotTransparent } from "./legacy.js";
 import { check, wcag, WCAG_THRESHOLDS, thresholdFor } from "./wcag.js";
+import { pick } from "./pick.js";
 import { parseColor } from "./color/parse.js";
 import { ColorInputError } from "./errors.js";
 
 export { ratio, score, isAccessible, isNotTransparent };
 export { check, wcag, WCAG_THRESHOLDS, thresholdFor };
+export { pick };
 export { parseColor };
 export { ColorInputError };
 export type { LegacyOptions, LegacyScore } from "./types.js";
@@ -23,6 +25,7 @@ export type {
   WcagResult,
   WcagUse,
 } from "./wcag.js";
+export type { PickCandidate, PickOptions, PickReasonCode, PickResult, RankedCandidate } from "./pick.js";
 export type { Color, ColorSpace } from "./color/model.js";
 export type { ParseError, ParseErrorCode, ParseResult } from "./color/parse-result.js";
 export type { ColorInput } from "./input.js";
@@ -36,6 +39,7 @@ export default {
   wcag,
   WCAG_THRESHOLDS,
   thresholdFor,
+  pick,
   parseColor,
   ColorInputError,
 };

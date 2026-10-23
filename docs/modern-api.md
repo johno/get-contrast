@@ -55,3 +55,37 @@ ratio.
 For opaque 8-bit colors the two agree exactly on the ratio, so migrating a
 call like `ratio(a, b)` to `wcag(a, b).ratio` only changes results where v3 was
 wrong (translucent colors) or threw.
+
+## `pick(background, candidates, options?)`
+
+Chooses among colors you already have, so a design system or agent can prefer a
+palette value over inventing one.
+
+```js
+const { pick } = require("get-contrast");
+
+const r = pick("#ffffff", [
+  { name: "text/secondary", color: "#767676" },
+  { name: "text/primary", color: "#111111" },
+  "#dddddd",
+]);
+r.winner.name;   // "text/primary"
+r.reason;        // "text/primary (#111111) has the highest contrast (18.88:1) of the 2 candidates that meet AA text 4.5:1 target."
+r.reasonCode;    // "highest-contrast"
+r.ranked;        // every candidate, best first, each with its full check() result
+```
+
+- `options` are `check()`'s: `level`, `use`, `minRatio`, `backdrop`.
+- **Ranking:** candidates that meet the target come first, then higher contrast
+  ratio, then input order. Equal contrast never reorders candidates, so results
+  are deterministic; the reason says when a tie was broken by order.
+- **When nothing passes** `winner` is `null`, `reasonCode` is `"none-pass"`, and
+  `ranked[0]` is the closest candidate, so callers can show the near miss
+  without it being mistaken for success.
+- Candidates are CSS strings, `Color` objects, or `{ name, color }`. Bad input
+  throws `ColorInputError` whose `role` is `background` or `candidates[i]`.
+- Arguments are never mutated. Alpha, wide-gamut and every modern syntax use the
+  same engine as `check()`.
+- APCA metadata (listed as optional in the roadmap) is not included yet; the
+  APCA model is waiting on a licensing decision (see issue #43). Adding it later
+  only adds fields.
