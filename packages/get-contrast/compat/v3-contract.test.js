@@ -34,15 +34,18 @@ describe("package metadata", () => {
   });
 
   test("export shape", () => {
-    expect(Object.keys(contrast).sort()).toEqual([
-      "isAccessible",
-      "isNotTransparent",
+    // v4 is additive: the four v3 exports stay, in their original order and
+    // as functions, and nothing marks the module as an ES module.
+    expect(Object.keys(contrast).slice(0, 4)).toEqual([
       "ratio",
       "score",
+      "isAccessible",
+      "isNotTransparent",
     ]);
-    for (const fn of Object.values(contrast)) {
-      expect(typeof fn).toBe("function");
+    for (const name of ["ratio", "score", "isAccessible", "isNotTransparent"]) {
+      expect(typeof contrast[name]).toBe("function");
     }
+    expect("__esModule" in contrast).toBe(false);
   });
 });
 

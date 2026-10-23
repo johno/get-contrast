@@ -1,12 +1,23 @@
-// Entry point. Re-exports the legacy API from the compiled sources under
-// dist/ as plain CommonJS properties, so that:
-//  - requiring this package returns exactly { ratio, score, isAccessible,
-//    isNotTransparent } with no `__esModule` marker (default imports of the
-//    module keep working in transpiled code), and
-//  - Node can detect the named exports for ESM `import { ratio } from ...`.
-const legacy = require("./dist/cjs/index.js");
+// Entry point. Re-exports the compiled API from dist/cjs as plain CommonJS
+// properties, so that:
+//  - requiring this package returns a plain object with no `__esModule`
+//    marker (default imports of the module keep working in transpiled code),
+//    and the four v3 functions are exactly the legacy implementations, and
+//  - Node can detect the named exports for ESM `import { ratio } from ...`
+//    (it only recognizes `module.exports.name = ...` assignments).
+// Keep this list in sync with src/index.ts (test/consumers.test.js checks it).
+const api = require("./dist/cjs/index.js");
 
-module.exports.ratio = legacy.ratio;
-module.exports.score = legacy.score;
-module.exports.isAccessible = legacy.isAccessible;
-module.exports.isNotTransparent = legacy.isNotTransparent;
+// v3 API
+module.exports.ratio = api.ratio;
+module.exports.score = api.score;
+module.exports.isAccessible = api.isAccessible;
+module.exports.isNotTransparent = api.isNotTransparent;
+
+// v4 API
+module.exports.check = api.check;
+module.exports.wcag = api.wcag;
+module.exports.WCAG_THRESHOLDS = api.WCAG_THRESHOLDS;
+module.exports.thresholdFor = api.thresholdFor;
+module.exports.parseColor = api.parseColor;
+module.exports.ColorInputError = api.ColorInputError;
