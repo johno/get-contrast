@@ -1,0 +1,16 @@
+{
+  "name": "@get-contrast/cli",
+  "version": "3.0.1",
+  "private": true,
+  "description": "The contrast command for get-contrast. Shipped inside the get-contrast package.",
+  "license": "MIT",
+  "bin": {
+    "contrast": "./bin.js"
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "get-contrast": "workspace:*"
+  }
+}
