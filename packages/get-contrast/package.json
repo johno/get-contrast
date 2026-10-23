@@ -30,12 +30,5 @@
     "contrast-ratio"
   ],
   "author": "John Otander <johnotander@gmail.com> (http://johnotander.com/)",
-  "license": "MIT",
-  "dependencies": {
-    "css-color-names": "1.0.1",
-    "is-blank": "2.1.0",
-    "is-named-css-color": "1.0.0",
-    "rgb": "^0.1.0",
-    "wcag-contrast": "3.0.0"
-  }
+  "license": "MIT"
 }

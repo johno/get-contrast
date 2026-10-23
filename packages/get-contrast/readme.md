@@ -56,7 +56,8 @@ The contrast is not accessible.
 
 ## Related
 
-Uses the following packages:
+Zero runtime dependencies. The legacy color parser and WCAG math are local
+ports of the following packages, with behavior preserved:
 
 - <https://github.com/tmcw/wcag-contrast>
 - <https://github.com/kamicane/rgb>
