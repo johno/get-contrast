@@ -45,7 +45,7 @@ try {
 
   const allowed = [
     /^(package\.json|readme\.md|license|index\.js|warnings\.js|cli\.js|cli-run\.js)$/,
-    /^dist\/(cjs|esm)\/[\w.-]+\.(js|d\.ts)$/,
+    /^dist\/(cjs|esm)\/([\w-]+\/)*[\w.-]+\.(js|d\.ts)$/,
     /^dist\/esm\/package\.json$/,
   ];
   for (const f of files) {

@@ -1,0 +1,66 @@
+# Color engine
+
+The color engine is the shared, dependency-free core that parsing, conversion,
+contrast, the CLI, MCP, and web surfaces build on. It lives in
+`packages/get-contrast/src/color/` and is internal until the modern APIs that
+expose it ship; the package's public exports are unchanged.
+
+## Model (`color/model.ts`)
+
+A `Color` is an immutable `{ space, coords, alpha }`:
+
+- `space` is one of `COLOR_SPACES`: `srgb`, `srgb-linear`, `display-p3`, `hsl`,
+  `hwb`, `xyz-d65`, `xyz-d50`, `lab`, `lch`, `oklab`, `oklch`. XYZ comes in both
+  D65 and D50 because CSS `lab()`/`lch()` are D50-relative and sRGB, Display P3
+  and OKLab are D65-relative; XYZ is a conversion intermediate.
+- `coords` is three finite numbers in CSS canonical units (see the table in
+  `model.ts`). Hue is in degrees and wraps into `[0, 360)`; `hsl`/`hwb`
+  saturation, lightness, whiteness and blackness are `0..100`.
+- `alpha` is `0..1`, clamped.
+- The model never clamps coordinates, so wide-gamut and out-of-gamut colors are
+  representable. Whether a color fits a gamut is a question for conversion
+  (#40), and nothing is changed silently to make it fit.
+- CSS `none` becomes `0`. The engine does not interpolate, and CSS treats
+  missing components as zero on conversion.
+- `SPACES` describes each space's components (name, whether it is a hue, what
+  100% means in functional notation). It is typed so that adding a space
+  without describing it fails to compile.
+
+`createColor` validates (finite numbers, known space) and throws `RangeError`
+for programmer errors; it is not how untrusted text enters the engine.
+
+## Parser contract (`color/parse-result.ts`)
+
+Parsers are pure, total functions of type `(input: unknown) => ParseResult`.
+They never throw, whatever the input is:
+
+```ts
+type ParseResult =
+  | { ok: true; color: Color }
+  | { ok: false; error: { code: ParseErrorCode; message: string; input: string } };
+```
+
+`code` is a closed set (`not-a-string`, `empty`, `invalid-syntax`,
+`unsupported-function`, `unsupported-color-space`, `invalid-component`).
+`message` is for humans and may change; consumers branch on `code`.
+
+### Modern parser vs. legacy adapter
+
+| | Modern parser | Legacy adapter |
+| --- | --- | --- |
+| Where | `color/` (added in #39) | `src/legacy-parse.ts` |
+| Standard | CSS Color 4 | whatever `rgb@0.1.0` did |
+| Output | `ParseResult` with a `Color` | normalized string or `null` |
+| Strictness | strict, reports why | accepts quirks (5-digit hex, `xx#fffxx`, ...) |
+| Used by | all new APIs | `ratio`, `score`, `isAccessible`, `isNotTransparent` only |
+
+The legacy adapter is frozen by the golden compatibility suite and must not be
+used by new code. The modern parser must not be bent to reproduce v3 quirks;
+when a legacy entry point needs both, the compatibility adapter decides which
+path serves it (see `legacy-warnings.md`).
+
+## Boundaries
+
+Nothing in `color/` knows about CSS serialization beyond what parsing needs,
+the CLI, JSON output, or UI. Formatting for display belongs to the surface that
+needs it.
