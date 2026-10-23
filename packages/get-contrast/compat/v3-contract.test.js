@@ -28,7 +28,8 @@ describe("package metadata", () => {
   test("name, main, types, bin", () => {
     expect(pkg.name).toBe("get-contrast");
     expect(pkg.main).toBe("index.js");
-    expect(pkg.types).toBe("types/index.d.ts");
+    // Declarations are generated from src/ into dist/ (v3 shipped none).
+    expect(pkg.types).toBe("dist/index.d.ts");
     expect(pkg.bin).toEqual({ contrast: "./cli.js" });
   });
 

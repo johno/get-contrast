@@ -22,7 +22,7 @@ Categories used below:
 | ------- | -------------------- |
 | name    | `get-contrast`       |
 | main    | `index.js` (CommonJS) |
-| types   | `types/index.d.ts`   |
+| types   | `dist/index.d.ts` (generated; no published version shipped declarations, and the hand-written `types/index.d.ts` was never in `files`) |
 | bin     | `contrast` -> `cli.js` |
 
 The module exports exactly `ratio`, `score`, `isAccessible`, and
