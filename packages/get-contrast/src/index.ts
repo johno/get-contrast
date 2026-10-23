@@ -27,6 +27,17 @@ export type {
   OklchValues,
   SolveDirection,
 } from "./solve.js";
+export { audit } from "./audit.js";
+export type {
+  AuditColor,
+  AuditNote,
+  AuditOptions,
+  AuditPair,
+  AuditResult,
+  PaletteEntry,
+  PaletteInput,
+  Recommendation,
+} from "./audit.js";
 export { pick } from "./pick.js";
 export type { PickCandidate, PickOptions, PickReasonCode, PickResult, RankedCandidate } from "./pick.js";
 export { parseColor } from "./color/parse.js";

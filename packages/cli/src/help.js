@@ -1,4 +1,4 @@
-const COMMANDS = ["check", "wcag", "pick", "find", "fix"];
+const COMMANDS = ["check", "wcag", "pick", "find", "fix", "audit", "matrix"];
 
 const COLOR_FLAGS = `  --json                 Print one JSON document (the library's result) instead of a report
   --quiet                Print nothing; the exit code is the result (not with --json)
@@ -77,6 +77,39 @@ ${COLOR_FLAGS}
 Example:
   contrast find "#777" --against white`,
 
+  audit: `Usage: contrast audit <palette.json | -> [options]
+
+Audit every foreground/background relationship in a palette: how many pairs meet
+the target, which do not, and the best foreground for each background. The
+palette is a JSON array of colors or { "name", "color" } objects, a { "name":
+"color" } map, or { "colors": ... }; plain text (one color per line) also works.
+"-" reads stdin. Repeated colors are noted and counted once. Exits 0; it
+informs rather than judges (see "contrast check" or token audits to gate CI).
+
+Options:
+${TARGET_FLAGS}
+  --only passing|failing Limit the listed pairs (JSON \`pairs\`)
+  --limit N              Failing pairs to print (default 25, 0 = all)
+  --max-colors N         Refuse palettes with more unique colors (default 200)
+${COLOR_FLAGS}
+
+Example:
+  contrast audit palette.json --level AAA`,
+
+  matrix: `Usage: contrast matrix <palette.json | -> [options]
+
+Print the all-pairs contrast matrix of a palette (rows are foregrounds, columns
+backgrounds; (parenthesized) ratios do not meet the target). More than 16 unique
+colors prints a summary instead unless you pass --wide. Same palette input and
+JSON result as "contrast audit".
+
+Options:
+${TARGET_FLAGS}
+  --only passing|failing Limit the listed pairs (JSON \`pairs\`)
+  --wide                 Print the matrix even when it is wide
+  --max-colors N         Refuse palettes with more unique colors (default 200)
+${COLOR_FLAGS}`,
+
   fix: `Usage: contrast fix <foreground> <background> [options]
 
 Like "find", for a foreground/background pair: suggests the smallest change to
@@ -107,6 +140,8 @@ Commands:
   pick <bg> <candidate...>          Choose the best existing color
   find <color> --against <color>    Smallest change that meets a target
   fix <fg> <bg>                     Same, for a foreground/background pair
+  audit <palette.json | ->          Audit a palette: failing pairs, best colors
+  matrix <palette.json | ->         All-pairs contrast matrix
   help [command]                    Show help
 
 Run "contrast help <command>" for options. Exit codes: 0 success or target met,

@@ -21,6 +21,7 @@ module.exports.WCAG_THRESHOLDS = api.WCAG_THRESHOLDS;
 module.exports.thresholdFor = api.thresholdFor;
 module.exports.find = api.find;
 module.exports.fix = api.fix;
+module.exports.audit = api.audit;
 module.exports.pick = api.pick;
 module.exports.parseColor = api.parseColor;
 module.exports.ColorInputError = api.ColorInputError;

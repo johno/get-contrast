@@ -124,6 +124,8 @@ try {
   check(asJson.status === 0 && asJson.stderr === "" && envelope && envelope.schema === 1 && envelope.result.ratio > 4.5, `contrast check --json: ${JSON.stringify(asJson)}`);
   const piped = inProject(bin, ["pick", "white", "-"], { input: "#111111\n#767676\n" });
   check(piped.status === 0 && piped.stdout.includes("Winner: #111111"), `contrast pick (stdin): ${JSON.stringify(piped)}`);
+  const audited = inProject(bin, ["audit", "-"], { input: '{"ink":"#111","paper":"#fff"}' });
+  check(audited.status === 0 && audited.stdout.startsWith("2 colors, 2 pairs: 2 pass"), `contrast audit: ${JSON.stringify(audited)}`);
   const quiet = inProject(bin, ["check", "#777", "#fff", "--quiet"]);
   check(quiet.status === 1 && quiet.stdout === "" && quiet.stderr === "", `contrast check --quiet: ${JSON.stringify(quiet)}`);
   const version = inProject(bin, ["--version"]);

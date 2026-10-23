@@ -5,6 +5,8 @@
 // `UsageError` (or let the library's input errors through) for user mistakes;
 // run.js turns those into exit code 2.
 
+const { readPalette, InputError } = require("./palette-input");
+
 const EXIT = Object.freeze({ OK: 0, NOT_MET: 1, USAGE: 2, FAILURE: 3 });
 
 class UsageError extends Error {}
@@ -29,7 +31,19 @@ const SOLVER = {
   "max-change": { name: "max-change", type: "string" },
 };
 
+const PALETTE = {
+  "max-colors": { name: "max-colors", type: "string" },
+};
+
 const SPECS = {
+  audit: {
+    ...SHARED,
+    ...TARGET,
+    ...PALETTE,
+    only: { name: "only", type: "string", values: ["passing", "failing"] },
+    limit: { name: "limit", type: "string" },
+  },
+  matrix: { ...SHARED, ...TARGET, ...PALETTE, only: { name: "only", type: "string", values: ["passing", "failing"] }, wide: { name: "wide", type: "boolean" } },
   check: { ...SHARED, ...TARGET },
   wcag: { ...SHARED, backdrop: TARGET.backdrop },
   pick: { ...SHARED, ...TARGET },
@@ -47,6 +61,9 @@ const SPECS = {
     change: { name: "change", type: "string", values: ["foreground", "background"] },
   },
 };
+
+// Truncate, never round up, so a failing ratio can never print as passing (4.4999 is 4.49).
+const fmt = (n) => (Math.floor(n * 100 + 1e-9) / 100).toFixed(2);
 
 function number(flags, name, { min, max }) {
   if (flags[name] === undefined) return undefined;
@@ -125,7 +142,7 @@ function wcag(lib, { positionals, flags }) {
     result: r,
     exitCode: EXIT.OK,
     human(out, style) {
-      out(`Contrast ratio  ${style.bold(`${r.ratio.toFixed(2)}:1`)}  ${style.dim(`(${r.ratio})`)}`);
+      out(`Contrast ratio  ${style.bold(`${fmt(r.ratio)}:1`)}  ${style.dim(`(${r.ratio})`)}`);
       out(`Foreground      ${r.foreground.hex}  ${style.dim(`luminance ${r.foreground.luminance.toFixed(4)}`)}`);
       out(`Background      ${r.background.hex}  ${style.dim(`luminance ${r.background.luminance.toFixed(4)}`)}`);
       for (const line of noteLines(r.notes, style)) out(line);
@@ -226,4 +243,118 @@ function fix(lib, { positionals, flags }) {
   return report(lib.fix(positionals[0], positionals[1], options));
 }
 
-module.exports = { EXIT, UsageError, SPECS, COMMANDS: { check, wcag, pick, find, fix } };
+// -- audit / matrix ------------------------------------------------------------
+
+function loadAudit(lib, { positionals, flags }, ctx, usage) {
+  needs(positionals, 1, usage);
+  let palette;
+  try {
+    palette = readPalette(positionals[0], ctx);
+  } catch (error) {
+    if (error instanceof InputError) throw new UsageError(error.message);
+    throw error;
+  }
+  const options = targetOptions(flags);
+  if (flags.only) options.only = flags.only;
+  const maxColors = number(flags, "max-colors", { min: 1, max: Infinity });
+  if (maxColors !== undefined) options.maxColors = maxColors;
+  return lib.audit(palette, options);
+}
+
+const nameOf = (color) => color.name || color.hex;
+
+function summaryLines(r, style, out) {
+  const s = r.summary;
+  out(`${style.bold(`${s.colors} colors`)}${s.duplicates ? ` (${s.unique} unique)` : ""}, ${s.pairs} pairs: ${style.pass(`${s.passing} pass`)}, ${s.failing ? style.fail(`${s.failing} fail`) : "0 fail"}`);
+  out(style.dim(`Target ${label(r.target)}`));
+  for (const color of r.colors) {
+    if (color.duplicateOf !== undefined) {
+      out(`${style.yellow("note")} ${nameOf(color)} is the same color as ${nameOf(r.colors[color.duplicateOf])}; it is not counted twice.`);
+    }
+  }
+  for (const note of r.notes) out(`${style.yellow("note")} ${note.message}`);
+}
+
+function audit(lib, parsed, ctx) {
+  const r = loadAudit(lib, parsed, ctx, "contrast audit <palette.json | ->");
+  const limit = number(parsed.flags, "limit", { min: 0, max: Infinity }) ?? 25;
+  return {
+    result: r,
+    exitCode: EXIT.OK,
+    human(out, style) {
+      summaryLines(r, style, out);
+      const failing = r.pairs.filter((p) => !p.passes);
+      if (failing.length) {
+        out("");
+        out(style.bold("Pairs that do not meet the target"));
+        // Opaque pairs are symmetric: list each combination once.
+        const seen = new Set();
+        const rows = failing.filter((p) => {
+          const key = [p.foreground, p.background].sort().join("-");
+          const symmetric = !p.notes;
+          if (symmetric && seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        const shown = limit === 0 ? rows : rows.slice(0, limit);
+        for (const p of shown) {
+          out(`  ${nameOf(r.colors[p.foreground])} on ${nameOf(r.colors[p.background])}  ${style.fail(p.ratioText)}`);
+        }
+        if (shown.length < rows.length) out(style.dim(`  ... and ${rows.length - shown.length} more (--limit 0 shows all, --json has everything)`));
+      }
+      out("");
+      out(style.bold("Best foreground for each background"));
+      for (const rec of r.recommendations) {
+        const bg = nameOf(r.colors[rec.background]);
+        if (rec.best !== null) {
+          const pair = r.pairs.find((p) => p.foreground === rec.best && p.background === rec.background);
+          const more = rec.candidates.length - 1;
+          out(`  on ${bg}: ${style.pass(nameOf(r.colors[rec.best]))} ${fmt(pair.ratio)}:1${more ? style.dim(` (+${more} more)`) : ""}`);
+        } else if (rec.closest !== null) {
+          out(`  on ${bg}: ${style.fail("none meets the target")}${style.dim(` (closest: ${nameOf(r.colors[rec.closest])})`)}`);
+        } else {
+          out(`  on ${bg}: ${style.dim("no other colors")}`);
+        }
+      }
+    },
+  };
+}
+
+const WIDE_LIMIT = 16;
+
+function matrix(lib, parsed, ctx) {
+  const r = loadAudit(lib, parsed, ctx, "contrast matrix <palette.json | ->");
+  return {
+    result: r,
+    exitCode: EXIT.OK,
+    human(out, style) {
+      summaryLines(r, style, out);
+      const n = r.unique.length;
+      if (n > WIDE_LIMIT && !parsed.flags.wide) {
+        out("");
+        out(`The matrix has ${n} columns, too wide to read here. Use --wide to print it anyway, --json for the data, or "contrast audit" for a summary.`);
+        return;
+      }
+      if (n < 2) return;
+      out("");
+      const labels = r.unique.map((i) => nameOf(r.colors[i]).slice(0, 12));
+      const width = Math.max(...labels.map((l) => l.length), 7); // 7 fits "(21.00)"
+      const cell = (text, painted) => painted + " ".repeat(Math.max(0, width + 1 - text.length));
+      out(" ".repeat(width + 1) + labels.map((l) => l.padEnd(width + 1)).join(""));
+      r.unique.forEach((fgIndex, a) => {
+        const cells = r.unique.map((bgIndex, b) => {
+          if (a === b) return cell("-", style.dim("-"));
+          const ratio = r.matrix[a][b];
+          const passes = ratio >= r.target.threshold;
+          const text = passes ? fmt(ratio) : `(${fmt(ratio)})`;
+          return cell(text, passes ? style.pass(text) : style.fail(text));
+        });
+        out(labels[a].padEnd(width + 1) + cells.join(""));
+      });
+      out("");
+      out(style.dim("Rows are the foreground, columns the background. (Parenthesized) ratios do not meet the target."));
+    },
+  };
+}
+
+module.exports = { EXIT, UsageError, SPECS, COMMANDS: { check, wcag, pick, find, fix, audit, matrix } };

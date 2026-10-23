@@ -28,6 +28,8 @@ behavior.
 | `contrast pick <bg> <candidate...>` | Rank existing colors; pick the best that meets the target |
 | `contrast find <color> --against <color>` | Smallest change that meets the target |
 | `contrast fix <fg> <bg>` | Same, for a foreground/background pair |
+| `contrast audit <palette.json \| ->` | Audit a palette: failing pairs and the best foreground for each background |
+| `contrast matrix <palette.json \| ->` | The all-pairs contrast matrix |
 | `contrast help [command]` | Help (`--help`, `-h`, `--version`, `-v` also work) |
 
 Colors are anything the modern parser accepts: hex, `rgb()`, `hsl()`, `hwb()`,
@@ -46,6 +48,29 @@ command is planned; it is waiting on a licensing decision, issue #43.)
 
 Output always says which threshold applied (for example
 `Target AAA text (7:1): FAIL`), so a result is never ambiguous about the rule.
+
+### Palettes (audit, matrix)
+
+```sh
+contrast audit palette.json --level AAA
+contrast matrix palette.json --only failing --json
+cat colors.txt | contrast audit -
+```
+
+The palette is a JSON array of colors or `{ "name", "color" }` objects, a
+`{ "name": "color" }` map, a `{ "colors": ... }` wrapper, or plain text with one
+color per line; `-` reads stdin. Object keys follow JavaScript property order
+(integer-like keys first), so use an array when order matters. Colors that are
+the same after conversion to sRGB (`white`, `#fff`, `color(display-p3 1 1 1)`)
+are noted and counted once. `audit` prints a summary, the pairs that miss the
+target (each opaque combination once, `--limit N`, default 25), and the best
+foreground for each background; `matrix` prints the grid (rows are foregrounds,
+columns backgrounds; `(parenthesized)` ratios miss the target) and, above 16
+colors, a summary unless you pass `--wide`. `--only passing|failing` filters the
+JSON `pairs`, and `--max-colors N` (default 200) guards against huge matrices.
+Both exit 0: they inform rather than judge. The result is the library's
+`audit()` result ([modern-api.md](./modern-api.md)); the file reading is a thin
+adapter (`packages/cli/src/palette-input.js`) kept separate from the audit logic.
 
 ### Solver flags (find, fix)
 

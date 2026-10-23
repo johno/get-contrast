@@ -10,6 +10,8 @@ import {
   check,
   wcag,
   pick,
+  audit,
+  type AuditResult,
   find,
   fix,
   type PickResult,
@@ -80,4 +82,14 @@ fix("#777", "#fff", { gamut: "rec2020" });
 // @ts-expect-error fix() takes `change`, find() takes `role`
 fix("#777", "#fff", { role: "background" });
 
-export { fixed, css, reached, limit, moved, picked, winnerName, reason, r, s, a, t, bad, passes, ratioText, aa, hex, fromParsed, theColor, threshold, err };
+const audited: AuditResult = audit({ ink: "#111", paper: "#fff" }, { level: "AA", only: "failing", maxColors: 50 });
+const unique: readonly number[] = audited.unique;
+const cell: number = audited.matrix[0][1];
+const best: number | null = audited.recommendations[0].best;
+audit(["#111", { name: "paper", color: "#fff" }]);
+// @ts-expect-error a palette is an array or a map, not a string
+audit("#111");
+// @ts-expect-error unknown filter
+audit(["#111"], { only: "some" });
+
+export { audited, unique, cell, best, fixed, css, reached, limit, moved, picked, winnerName, reason, r, s, a, t, bad, passes, ratioText, aa, hex, fromParsed, theColor, threshold, err };

@@ -230,6 +230,22 @@ function ratioText(ratio: number): string {
   return `${(Math.floor(ratio * 100 + 1e-9) / 100).toFixed(2)}:1`;
 }
 
+/** The level, use and threshold a set of options asks for. Throws `RangeError` for bad values. */
+export function resolveTarget(options: Pick<CheckOptions, "level" | "use" | "minRatio">): {
+  level: WcagLevel;
+  use: WcagUse;
+  threshold: number;
+  custom: boolean;
+} {
+  const level = options.level ?? "AA";
+  const use = options.use ?? "text";
+  const custom = options.minRatio !== undefined;
+  if (custom && !(typeof options.minRatio === "number" && options.minRatio >= 1 && options.minRatio <= 21)) {
+    throw new RangeError("minRatio must be a number from 1 to 21");
+  }
+  return { level, use, custom, threshold: custom ? (options.minRatio as number) : thresholdFor(level, use) };
+}
+
 /**
  * Evaluates a foreground/background pair against WCAG 2.2: the ratio, every
  * level and use, the requested target, and notes explaining alpha and gamut
@@ -243,13 +259,7 @@ export function check(
   const result = wcag(foreground, background, options);
   const { ratio } = result;
 
-  const level = options.level ?? "AA";
-  const use = options.use ?? "text";
-  const custom = options.minRatio !== undefined;
-  if (custom && !(typeof options.minRatio === "number" && options.minRatio >= 1 && options.minRatio <= 21)) {
-    throw new RangeError("minRatio must be a number from 1 to 21");
-  }
-  const threshold = custom ? (options.minRatio as number) : thresholdFor(level, use);
+  const { level, use, threshold, custom } = resolveTarget(options);
 
   return {
     ...result,
