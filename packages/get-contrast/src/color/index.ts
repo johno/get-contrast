@@ -2,3 +2,4 @@
 export * from "./model.js";
 export * from "./parse-result.js";
 export { parseColor } from "./parse.js";
+export * from "./convert.js";

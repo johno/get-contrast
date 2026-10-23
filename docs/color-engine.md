@@ -83,3 +83,29 @@ functions (`calc()`, `var()`, `env()`), `color-mix()`, `light-dark()`,
 `device-cmyk()`, other `color()` spaces, `currentcolor` and the CSS-wide
 keywords. The scanner is linear in the input length; hostile inputs
 (deep nesting, very long numbers or whitespace runs) are covered by tests.
+
+## Conversion, gamut and compositing (`color/convert.ts`)
+
+`convert(color, space)` converts between every supported space, keeping alpha.
+XYZ with a D65 white point is the hub; `lab`/`lch` pass through a Bradford
+adaptation to D50, as CSS defines them. The sRGB family (`srgb`, `srgb-linear`,
+`hsl`, `hwb`) converts among itself without going through XYZ, so `#ff0000` is
+exactly `hsl(0 100% 50%)`. Matrices and constants follow the CSS Color 4
+reference code; the P3 inverse matrix is computed from the forward matrix, and
+tests re-derive the forward matrices from the primaries' chromaticities.
+
+Conversion never clamps or gamut-maps. A result outside the target gamut simply
+has out-of-range coordinates, e.g. `color(display-p3 1 0 0)` in sRGB is
+`[1.093, -0.227, -0.150]`. `isInGamut(color, "srgb" | "display-p3")` reports
+membership (with a small epsilon for float noise) and `clampToGamut` is the
+explicit, per-channel clamp. It is not perceptual gamut mapping.
+
+`composite(foreground, background, { space })` is source-over compositing that
+returns sRGB. By default it blends gamma-encoded channels, which is what
+browsers do when painting translucent colors and therefore what users see;
+`space: "srgb-linear"` blends physical light instead. The result alpha is
+`af + ab * (1 - af)`. Compositing is associative within one blending space.
+
+Round-trip tolerances (absolute, in-gamut sRGB through the named space and
+back): srgb-linear 1e-12; display-p3, xyz-d65, xyz-d50, oklab, oklch 1e-9; hsl,
+hwb, lab, lch 1e-7.
