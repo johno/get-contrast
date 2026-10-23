@@ -30,6 +30,7 @@ behavior.
 | `contrast fix <fg> <bg>` | Same, for a foreground/background pair |
 | `contrast audit <palette.json \| ->` | Audit a palette: failing pairs and the best foreground for each background |
 | `contrast matrix <palette.json \| ->` | The all-pairs contrast matrix |
+| `contrast tokens <file \| -> --relations <file>` | Audit design tokens against explicit relationships; reviewable fixes |
 | `contrast help [command]` | Help (`--help`, `-h`, `--version`, `-v` also work) |
 
 Colors are anything the modern parser accepts: hex, `rgb()`, `hsl()`, `hwb()`,
@@ -71,6 +72,51 @@ JSON `pairs`, and `--max-colors N` (default 200) guards against huge matrices.
 Both exit 0: they inform rather than judge. The result is the library's
 `audit()` result ([modern-api.md](./modern-api.md)); the file reading is a thin
 adapter (`packages/cli/src/palette-input.js`) kept separate from the audit logic.
+
+### Design tokens (tokens)
+
+```sh
+contrast tokens tokens.json --relations relations.json
+contrast tokens theme.css --scope '[data-theme=dark]' --relations relations.json --json
+```
+
+Audits **explicit** relationships, not every possible token pair: a pair like
+`text.muted` on `surface.default` is only meaningful if someone says so. The
+relations file is a JSON array (or `{ "relations": [...] }`) of
+`"text.default -> surface.default"` strings, `["fg", "bg"]` pairs, or objects
+`{ foreground, background, name?, level?, use?, minRatio?, candidates? }` (a
+relation's own target overrides the command's `--level`/`--use`/`--min-ratio`).
+
+Token files:
+
+- **JSON**: nested objects whose leaves are colors, or objects with `$value`
+  (W3C Design Tokens) / `value` (Style Dictionary); `$type` is read and groups
+  inherit it. A whole-value alias `"{color.gray.500}"` references another token.
+  Token names are dot paths.
+- **CSS custom properties**: `--name: value` declarations with `var(--other)`
+  / `var(--other, fallback)` references. Names include the leading `--` (it may
+  be omitted in relations). `:root` applies first and `--scope` (a selector such
+  as `[data-theme=dark]`, or an at-rule such as `@media (prefers-color-scheme:
+  dark)`) overrides it, like the cascade. Nested at-rules are flattened.
+
+For each **failing** relation the report shows both tokens and their resolved
+values, the current ratio and the required one, and a fix, **existing tokens
+first**: among tokens that meet the target (judged by `pick()`) the one
+perceptually nearest to the current value is suggested, searched in the
+foreground token's own namespace (`text.*` for `text.muted`; override with
+`--candidates` or a relation's `candidates`). Only if none qualifies is a new
+color synthesized with `fix()`. When a new color would change less than the
+existing token, the report says so, so a person can choose. Tokens that are
+themselves about to be edited are never offered as replacements.
+
+Nothing is written. The suggested edits (`token`, `from`, `to`, where it lives)
+are printed; `--json` adds them to `result.edits` and as `patch`, an RFC 6902
+patch for JSON token files. The audit applies the edits in memory and re-checks
+every relation (`result.verification`), so a suggestion that would break another
+relation (for example an edited token that is also a background elsewhere) is
+reported, not hidden. Exit codes: 0 all pass, 1 some fail, 2 a token cannot be
+resolved (unknown, circular, not a color) or the input is invalid. Resolution
+errors are per relation, with near-name suggestions, and do not stop the others.
 
 ### Solver flags (find, fix)
 

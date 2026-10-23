@@ -187,3 +187,42 @@ r.recommendations;  // per background: { candidates (best first), best, closest 
   matrix has n(n-1) pairs, and an oversized palette throws a `RangeError` that
   says how to raise the limit).
 - APCA metadata is not included yet; see issue #43.
+
+## Design tokens: `parseTokens`, `parseRelations`, `auditTokens`
+
+The library side of `contrast tokens`, for other surfaces (an MCP server, a CI
+action). Reading files stays with the caller; these take text and data.
+
+```js
+const { parseTokens, parseRelations, auditTokens, toJsonPatch } = require("get-contrast");
+
+const set = parseTokens(jsonText);                 // or parseTokens(cssText, { scope: "[data-theme=dark]" })
+const relations = parseRelations(["text.muted -> surface.default"]);
+const r = auditTokens(set, relations, { level: "AA" });
+
+r.summary;       // { relations, pass, fail, error }
+r.relations[0];  // { name, status, foreground, background, ratio, check, issues, suggestion? }
+r.edits;         // [{ token, from, to, kind: "existing-token" | "synthesized", source }]
+r.verification;  // { ok, regressions }: the edits applied in memory and every relation re-checked
+toJsonPatch(r.edits); // RFC 6902 operations for JSON token files
+```
+
+- `parseTokens(text, { format?, scope? })` sniffs JSON vs CSS when `format` is
+  omitted and throws `TokenSourceError` (`code`: `invalid-json`, `invalid-css`,
+  `empty`, `unknown-format`) for unusable files.
+- `parseRelations` accepts strings, pairs and objects (see the CLI docs) and
+  throws `RelationError` with the index of the bad entry. `auditTokens` accepts
+  the same inputs.
+- Problems with the *data* never throw: a relation whose tokens cannot be
+  resolved has `status: "error"` and `issues` (`unknown-token` with suggestions,
+  `circular-reference`, `not-a-color`, `unsupported-value`), and the other
+  relations still run.
+- `suggestion.recommended` is `"existing"`, `"synthesized"`, or `null` (nothing
+  can reach the target). `existing` is the nearest qualifying token by OKLab
+  distance, `alternatives` the next few, `synthesized` the `fix()` result for
+  comparison, and `edit`/`after` what changes and how it re-checks.
+- Edits are de-duplicated by token. If two failing relations want different
+  values for one token, a `conflicting-edits` note says so, and `verification`
+  reports the relation left unmet.
+- Options: `check()`'s `level`/`use`/`minRatio`/`backdrop` (a relation can
+  override the first three), `candidates` (globs with `*`), `maxAlternatives`.

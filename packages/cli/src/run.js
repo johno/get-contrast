@@ -24,7 +24,7 @@ const SCHEMA_VERSION = 1;
 
 /** Maps anything thrown by a command to the documented error object. */
 function describeError(lib, error) {
-  if (error instanceof UsageError) return { exitCode: EXIT.USAGE, error: { code: "usage", message: error.message } };
+  if (error instanceof UsageError) return { exitCode: EXIT.USAGE, error: { code: error.code, message: error.message } };
   if (lib.ColorInputError && error instanceof lib.ColorInputError) {
     return {
       exitCode: EXIT.USAGE,
@@ -135,7 +135,7 @@ function run(lib, argv, io = defaultIo()) {
   }
 
   if (json) {
-    out(JSON.stringify({ schema: SCHEMA_VERSION, command: first, exitCode: outcome.exitCode, result: outcome.result }, null, 2));
+    out(JSON.stringify({ schema: SCHEMA_VERSION, command: first, exitCode: outcome.exitCode, result: outcome.result, ...(outcome.patch ? { patch: outcome.patch } : {}) }, null, 2));
   } else if (!parsed.flags.quiet) {
     outcome.human(out, style(io.stdout));
   }

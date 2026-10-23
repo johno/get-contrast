@@ -126,6 +126,14 @@ try {
   check(piped.status === 0 && piped.stdout.includes("Winner: #111111"), `contrast pick (stdin): ${JSON.stringify(piped)}`);
   const audited = inProject(bin, ["audit", "-"], { input: '{"ink":"#111","paper":"#fff"}' });
   check(audited.status === 0 && audited.stdout.startsWith("2 colors, 2 pairs: 2 pass"), `contrast audit: ${JSON.stringify(audited)}`);
+  fs.writeFileSync(path.join(project, "tokens.json"), JSON.stringify({ surface: { default: "#ffffff" }, text: { default: "#111111", muted: "#aaaaaa" } }));
+  fs.writeFileSync(path.join(project, "relations.json"), JSON.stringify(["text.default -> surface.default", "text.muted -> surface.default"]));
+  const tokenRun = inProject(bin, ["tokens", "tokens.json", "--relations", "relations.json", "--json"]);
+  let tokenDoc = null;
+  try {
+    tokenDoc = JSON.parse(tokenRun.stdout);
+  } catch {}
+  check(tokenRun.status === 1 && tokenDoc && tokenDoc.result.summary.fail === 1 && tokenDoc.patch.length === 1, `contrast tokens: ${JSON.stringify(tokenRun)}`);
   const quiet = inProject(bin, ["check", "#777", "#fff", "--quiet"]);
   check(quiet.status === 1 && quiet.stdout === "" && quiet.stderr === "", `contrast check --quiet: ${JSON.stringify(quiet)}`);
   const version = inProject(bin, ["--version"]);

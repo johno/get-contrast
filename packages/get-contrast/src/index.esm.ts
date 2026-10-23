@@ -6,6 +6,7 @@ import { ratio, score, isAccessible, isNotTransparent } from "./legacy.js";
 import { check, wcag, WCAG_THRESHOLDS, thresholdFor } from "./wcag.js";
 import { find, fix } from "./solve.js";
 import { audit } from "./audit.js";
+import { auditTokens, parseRelations, parseTokens, resolveToken, toJsonPatch, RelationError, TokenSourceError } from "./tokens/index.js";
 import { pick } from "./pick.js";
 import { parseColor } from "./color/parse.js";
 import { ColorInputError } from "./errors.js";
@@ -14,6 +15,7 @@ export { ratio, score, isAccessible, isNotTransparent };
 export { check, wcag, WCAG_THRESHOLDS, thresholdFor };
 export { find, fix };
 export { audit };
+export { auditTokens, parseRelations, parseTokens, resolveToken, toJsonPatch, RelationError, TokenSourceError };
 export { pick };
 export { parseColor };
 export { ColorInputError };
@@ -50,6 +52,27 @@ export type {
   PaletteInput,
   Recommendation,
 } from "./audit.js";
+export type {
+  AuditTokensOptions,
+  EditVerification,
+  ExistingSuggestion,
+  Relation,
+  RelationInput,
+  RelationResult,
+  Resolution,
+  SynthesizedSuggestion,
+  TokenAuditNote,
+  TokenAuditResult,
+  TokenDefinition,
+  TokenEdit,
+  TokenFormat,
+  TokenIssue,
+  TokenIssueCode,
+  TokenReference,
+  TokenSet,
+  TokenSource,
+  TokenSuggestion,
+} from "./tokens/index.js";
 export type { PickCandidate, PickOptions, PickReasonCode, PickResult, RankedCandidate } from "./pick.js";
 export type { Color, ColorSpace } from "./color/model.js";
 export type { ParseError, ParseErrorCode, ParseResult } from "./color/parse-result.js";
@@ -67,6 +90,13 @@ export default {
   find,
   fix,
   audit,
+  auditTokens,
+  parseRelations,
+  parseTokens,
+  resolveToken,
+  toJsonPatch,
+  RelationError,
+  TokenSourceError,
   pick,
   parseColor,
   ColorInputError,
