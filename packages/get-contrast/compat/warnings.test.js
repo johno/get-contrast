@@ -90,11 +90,11 @@ describe("legacy API and warnings", () => {
   });
 
   test("main export shape is unchanged by the warning helper", () => {
-    expect(Object.keys(contrast).sort()).toEqual([
-      "isAccessible",
-      "isNotTransparent",
+    expect(Object.keys(contrast).slice(0, 4)).toEqual([
       "ratio",
       "score",
+      "isAccessible",
+      "isNotTransparent",
     ]);
   });
 });

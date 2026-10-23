@@ -9,6 +9,8 @@ const root = path.join(__dirname, "..");
 const pkg = require("../package.json");
 const entry = JSON.stringify(root);
 const entryFile = JSON.stringify(path.join(root, "index.js"));
+// The public value exports: the compiled CommonJS build is the source of truth.
+const exportedNames = Object.keys(require("../dist/cjs/index.js")).filter((k) => k !== "__esModule");
 
 function run(cmd, args) {
   const r = spawnSync(cmd, args, { encoding: "utf8" });
@@ -16,9 +18,9 @@ function run(cmd, args) {
 }
 
 describe("runtime consumers", () => {
-  const cjs = `const c = require(${entry}); console.log(JSON.stringify([Object.keys(c).sort(), c.ratio("#000","#fff"), c.score("#000","#fff"), c.isAccessible("#000","#fff"), c.isNotTransparent("#fff"), "__esModule" in c]))`;
+  const cjs = `const c = require(${entry}); console.log(JSON.stringify([Object.keys(c).slice(0, 4), c.ratio("#000","#fff"), c.score("#000","#fff"), c.isAccessible("#000","#fff"), c.isNotTransparent("#fff"), "__esModule" in c]))`;
   const expected = JSON.stringify([
-    ["isAccessible", "isNotTransparent", "ratio", "score"],
+    ["ratio", "score", "isAccessible", "isNotTransparent"],
     21,
     "AAA",
     true,
@@ -58,7 +60,10 @@ describe("runtime consumers", () => {
       `import c, * as ns from ${esmEntry}; console.log(Object.keys(ns).sort().join(), typeof c.ratio, c.ratio === ns.ratio)`,
     ]);
     expect(r.stderr).toBe("");
-    expect(r.stdout).toBe("default,isAccessible,isNotTransparent,ratio,score function true");
+    const names = r.stdout.split(" ")[0].split(",");
+    expect(names).toEqual([...names].sort());
+    expect(names).toEqual(["default", ...exportedNames].sort());
+    expect(r.stdout.endsWith(" function true")).toBe(true);
   });
 
   test("get-contrast/warnings subpath exports the helper", () => {
@@ -87,11 +92,21 @@ describe("generated declarations", () => {
     }
   });
 
-  test("declarations expose exactly the public legacy surface", () => {
-    expect(dts("cjs/index.d.ts").trim().split("\n")).toEqual([
-      'export { ratio, score, isAccessible, isNotTransparent } from "./legacy.js";',
-      'export type { LegacyOptions, LegacyScore } from "./types.js";',
-    ]);
+  test("every public export is present in the CJS entry shim, ESM build, and declarations", () => {
+    const shim = Object.keys(require("../index.js"));
+    expect([...shim].sort()).toEqual([...exportedNames].sort());
+    // the four v3 exports come first, in their original order
+    expect(shim.slice(0, 4)).toEqual(["ratio", "score", "isAccessible", "isNotTransparent"]);
+
+    const declared = (file) =>
+      [...dts(file).matchAll(/^export (?:declare )?(?:function|const|class) (\w+)/gm)].map((m) => m[1]);
+    const reExported = (file) =>
+      [...dts(file).matchAll(/^export \{([^}]*)\} from/gm)].flatMap((m) => m[1].split(",").map((s) => s.trim()).filter(Boolean));
+    const surface = new Set([...declared("cjs/index.d.ts"), ...reExported("cjs/index.d.ts")]);
+    for (const name of exportedNames) expect(surface.has(name)).toBe(true);
+  });
+
+  test("legacy declarations are unchanged", () => {
     expect(surface(dts("cjs/legacy.d.ts"))).toEqual([
       "ratio",
       "score",
@@ -105,6 +120,7 @@ describe("generated declarations", () => {
     const esm = dts("esm/index.d.ts");
     expect(esm).toContain("export { ratio, score, isAccessible, isNotTransparent };");
     expect(esm).toContain("export default _default;");
+    for (const name of exportedNames) expect(esm).toContain(name);
   });
 
   test("library source has no Bun- or Node-only APIs", () => {

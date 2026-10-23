@@ -84,16 +84,16 @@ try {
   // 4. Legacy CommonJS import: exact v3 shape.
   expectOk(
     "node require",
-    inProject("node", ["-e", 'const c=require("get-contrast");console.log(Object.keys(c).join(),"__esModule" in c,c.ratio("#000","#fff"),c.score("#777","#fff"))']),
-    "ratio,score,isAccessible,isNotTransparent false 21 AA Large"
+    inProject("node", ["-e", 'const c=require("get-contrast");console.log(Object.keys(c).slice(0,4).join(),"__esModule" in c,c.ratio("#000","#fff"),c.score("#777","#fff"),c.check("#000","#fff").target.passes)']),
+    "ratio,score,isAccessible,isNotTransparent false 21 AA Large true"
   );
   expectOk("node require subpath", inProject("node", ["-e", 'console.log(typeof require("get-contrast/warnings").warn, require("get-contrast/package.json").name)']), "function get-contrast");
 
   // 5. ESM, resolved through the exports map.
   expectOk(
     "node import",
-    inProject("node", ["--input-type=module", "-e", 'import c, { ratio } from "get-contrast"; import { warn } from "get-contrast/warnings"; console.log(ratio("#000","#fff"), typeof c.score, typeof warn)']),
-    "21 function function"
+    inProject("node", ["--input-type=module", "-e", 'import c, { ratio, check } from "get-contrast"; import { warn } from "get-contrast/warnings"; console.log(ratio("#000","#fff"), typeof c.score, typeof warn, check("#767676","#fff").ratioText)']),
+    "21 function function 4.54:1"
   );
 
   // 6. Bun, when available (CI installs it; local runs may not have it).
@@ -117,10 +117,12 @@ try {
     [
       'import { ratio, score, isAccessible, isNotTransparent } from "get-contrast";',
       'import { configure } from "get-contrast/warnings";',
+      'import { check } from "get-contrast";',
       'const n: number = ratio("#000", "#fff");',
+      'const passes: boolean = check("#000", "#fff", { level: "AAA" }).target.passes;',
       'const s: "AAA" | "AA" | "AA Large" | "Fail" = score("#000", "#fff");',
       "configure({ enabled: false });",
-      "export { n, s, isAccessible, isNotTransparent };",
+      "export { n, s, passes, isAccessible, isNotTransparent };",
     ].join("\n") + "\n"
   );
   const modes = [
