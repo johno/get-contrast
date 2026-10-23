@@ -12,7 +12,8 @@
     "contrast": "./cli.js"
   },
   "scripts": {
-    "test": "ava -v"
+    "test": "ava -v",
+    "test:compat": "bun test compat"
   },
   "repository": "johno/get-contrast",
   "keywords": [
@@ -29,6 +30,11 @@
     "is-named-css-color": "1.0.0",
     "rgb": "^0.1.0",
     "wcag-contrast": "3.0.0"
+  },
+  "ava": {
+    "files": [
+      "test.js"
+    ]
   },
   "devDependencies": {
     "ava": "^4.3.0"
