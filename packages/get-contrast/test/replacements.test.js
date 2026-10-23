@@ -3,13 +3,13 @@
 // removed packages is pinned by compat/ (golden fixtures).
 const { describe, test, expect } = require("bun:test");
 require("../scripts/ensure-build");
-const { NAMED_COLORS } = require("../dist/named-colors");
+const { NAMED_COLORS } = require("../dist/cjs/named-colors");
 const {
   parseLegacyColor,
   isLegacyNamedColor,
   lookupNamedColor,
-} = require("../dist/legacy-parse");
-const { contrastRatio, scoreForRatio } = require("../dist/legacy-wcag");
+} = require("../dist/cjs/legacy-parse");
+const { contrastRatio, scoreForRatio } = require("../dist/cjs/legacy-wcag");
 
 describe("named colors", () => {
   test("has the 148 CSS named colors with lowercase keys and #rrggbb values", () => {

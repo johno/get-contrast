@@ -2,6 +2,9 @@ const { test, expect } = require("bun:test");
 const { spawnSync } = require("node:child_process");
 const path = require("node:path");
 
+// bin.js loads the workspace get-contrast package, which must be built.
+require("../get-contrast/scripts/ensure-build");
+
 const bin = path.join(__dirname, "bin.js");
 const run = (...args) => spawnSync("node", [bin, ...args], { encoding: "utf8" });
 

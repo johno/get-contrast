@@ -7,7 +7,7 @@
 // The `parseLegacyColor` algorithm is ported from rgb@0.1.0, MIT licensed,
 // (c) Valerio Proietti and the MooTools contributors. `isLegacyNamedColor`
 // reproduces the detection used by is-named-css-color@1.0.0 (MIT).
-import { NAMED_COLORS } from "./named-colors";
+import { NAMED_COLORS } from "./named-colors.js";
 
 // Colors rgb@0.1.0 knows natively. `transparent` is what makes the string
 // "transparent" parse; the rest shadow nothing, because named colors are

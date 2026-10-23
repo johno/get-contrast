@@ -1,0 +1,67 @@
+name: Prerelease
+
+# Publishes a v4 prerelease of `get-contrast` to the `next` dist-tag.
+# Stable releases are intentionally not handled here. Runs as a dry run unless
+# `publish` is ticked. Requires the NPM_TOKEN repository secret to publish.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Prerelease version, e.g. 4.0.0-next.0"
+        required: true
+        type: string
+      publish:
+        description: "Actually publish (otherwise npm publish --dry-run)"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: Validate version is a v4 prerelease
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^4\.[0-9]+\.[0-9]+-[0-9A-Za-z.-]+$ ]]; then
+            echo "::error::'$VERSION' is not a v4 prerelease (expected 4.x.y-<tag>.<n>)"
+            exit 1
+          fi
+      - run: bun install --frozen-lockfile
+      - name: Set package version
+        working-directory: packages/get-contrast
+        env:
+          VERSION: ${{ inputs.version }}
+        run: npm version "$VERSION" --no-git-tag-version
+      - run: bun run build
+      - run: bun run typecheck
+      - name: Test
+        working-directory: packages/get-contrast
+        run: bun run test
+      - name: Verify tarball
+        working-directory: packages/get-contrast
+        run: bun run verify:pack
+      - name: Publish to the next tag
+        working-directory: packages/get-contrast
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          if [ "$PUBLISH" = "true" ]; then
+            npm publish --tag next --access public --provenance
+          else
+            npm publish --tag next --access public --provenance --dry-run
+          fi

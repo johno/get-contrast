@@ -22,7 +22,13 @@ bun install
 bun run build       # packages + apps/www
 bun run test        # unit + v3 compatibility suites
 bun run typecheck
+bun run --cwd packages/get-contrast test:compat   # v3 compatibility suite alone
+bun run --cwd packages/get-contrast verify:pack   # pack, inspect, install, smoke-test
 ```
+
+CI (`.github/workflows/ci.yml`) runs the same steps. Prereleases to the `next`
+dist-tag go through the manual `Prerelease` workflow, which refuses anything
+that is not a `4.x.y-<tag>` version and dry-runs unless told to publish.
 
 `contrast` is published as part of `get-contrast`. `packages/cli` owns its
 implementation; `packages/get-contrast/scripts/build-cli.js` copies it into the

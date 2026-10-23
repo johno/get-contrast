@@ -50,6 +50,17 @@ describe("runtime consumers", () => {
     expect(r.stdout).toBe("21 AAA function");
   });
 
+  test("native ESM build: named exports plus default", () => {
+    const esmEntry = JSON.stringify(path.join(root, "dist", "esm", "index.js"));
+    const r = run("node", [
+      "--input-type=module",
+      "-e",
+      `import c, * as ns from ${esmEntry}; console.log(Object.keys(ns).sort().join(), typeof c.ratio, c.ratio === ns.ratio)`,
+    ]);
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toBe("default,isAccessible,isNotTransparent,ratio,score function true");
+  });
+
   test("get-contrast/warnings subpath exports the helper", () => {
     const r = run("node", [
       "-e",
@@ -61,25 +72,39 @@ describe("runtime consumers", () => {
 
 describe("generated declarations", () => {
   const dts = (f) => fs.readFileSync(path.join(root, "dist", f), "utf8");
+  const surface = (s) => [...s.matchAll(/^export declare function (\w+)\(/gm)].map((m) => m[1]);
 
-  test("types entry points at generated declarations", () => {
-    expect(pkg.types).toBe("dist/index.d.ts");
+  test("types entries point at generated declarations", () => {
+    expect(pkg.types).toBe("dist/cjs/index.d.ts");
     expect(fs.existsSync(path.join(root, pkg.types))).toBe(true);
+    for (const target of [
+      pkg.exports["."].import.types,
+      pkg.exports["."].require.types,
+      pkg.exports["./warnings"].import.types,
+      pkg.exports["./warnings"].require.types,
+    ]) {
+      expect(fs.existsSync(path.join(root, target))).toBe(true);
+    }
   });
 
   test("declarations expose exactly the public legacy surface", () => {
-    expect(dts("index.d.ts").trim().split("\n")).toEqual([
-      'export { ratio, score, isAccessible, isNotTransparent } from "./legacy";',
-      'export type { LegacyOptions, LegacyScore } from "./types";',
+    expect(dts("cjs/index.d.ts").trim().split("\n")).toEqual([
+      'export { ratio, score, isAccessible, isNotTransparent } from "./legacy.js";',
+      'export type { LegacyOptions, LegacyScore } from "./types.js";',
     ]);
-    const legacy = dts("legacy.d.ts");
-    expect([...legacy.matchAll(/^export declare function (\w+)\(/gm)].map((m) => m[1])).toEqual([
+    expect(surface(dts("cjs/legacy.d.ts"))).toEqual([
       "ratio",
       "score",
       "isAccessible",
       "isNotTransparent",
     ]);
-    expect(legacy).toContain("): number;");
+    expect(dts("cjs/legacy.d.ts")).toContain("): number;");
+  });
+
+  test("ESM declarations add only a default export", () => {
+    const esm = dts("esm/index.d.ts");
+    expect(esm).toContain("export { ratio, score, isAccessible, isNotTransparent };");
+    expect(esm).toContain("export default _default;");
   });
 
   test("library source has no Bun- or Node-only APIs", () => {

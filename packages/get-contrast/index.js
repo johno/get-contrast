@@ -4,7 +4,7 @@
 //    isNotTransparent } with no `__esModule` marker (default imports of the
 //    module keep working in transpiled code), and
 //  - Node can detect the named exports for ESM `import { ratio } from ...`.
-const legacy = require("./dist/index.js");
+const legacy = require("./dist/cjs/index.js");
 
 module.exports.ratio = legacy.ratio;
 module.exports.score = legacy.score;

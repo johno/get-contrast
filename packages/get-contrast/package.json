@@ -3,7 +3,7 @@
   "version": "3.0.1",
   "description": "Get the contrast ratio and WCAG score between common CSS color types.",
   "main": "index.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/cjs/index.d.ts",
   "files": [
     "cli.js",
     "cli-run.js",
@@ -15,12 +15,15 @@
     "contrast": "./cli.js"
   },
   "scripts": {
-    "build": "rm -rf dist && node scripts/build-ts.js && node scripts/build-cli.js",
-    "typecheck": "node scripts/build-ts.js && tsc -p tsconfig.typecheck.json",
-    "test": "bun test ./test/ && bun run test:compat",
+    "build": "node scripts/build-ts.js && node scripts/build-cli.js",
+    "typecheck": "node scripts/ensure-build.js && tsc -p tsconfig.json",
+    "test": "bun run test:modern && bun run test:compat",
     "test:compat": "bun test ./compat/ && GET_CONTRAST_NO_WARNINGS=1 bun test ./compat/",
     "compat:update": "node compat/generate.js",
-    "prepack": "bun run build"
+    "prepack": "bun run build",
+    "verify:pack": "node scripts/verify-pack.js",
+    "prepublishOnly": "bun run test && bun run verify:pack",
+    "test:modern": "bun test ./test/"
   },
   "repository": "johno/get-contrast",
   "keywords": [
@@ -30,5 +33,38 @@
     "contrast-ratio"
   ],
   "author": "John Otander <johnotander@gmail.com> (http://johnotander.com/)",
-  "license": "MIT"
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./index.js"
+      }
+    },
+    "./warnings": {
+      "import": {
+        "types": "./dist/esm/warnings.d.ts",
+        "default": "./dist/esm/warnings.js"
+      },
+      "require": {
+        "types": "./dist/cjs/warnings.d.ts",
+        "default": "./warnings.js"
+      }
+    },
+    "./index.js": "./index.js",
+    "./warnings.js": "./warnings.js",
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "warnings": [
+        "dist/cjs/warnings.d.ts"
+      ]
+    }
+  }
 }
