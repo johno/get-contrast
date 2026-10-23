@@ -34,7 +34,7 @@ try {
     "index.js",
     "warnings.js",
     "cli.js",
-    "cli-run.js",
+    "cli-src/run.js",
     "dist/cjs/index.js",
     "dist/cjs/index.d.ts",
     "dist/esm/index.js",
@@ -44,7 +44,8 @@ try {
   for (const f of required) check(files.includes(f), `tarball is missing ${f}`);
 
   const allowed = [
-    /^(package\.json|readme\.md|license|index\.js|warnings\.js|cli\.js|cli-run\.js)$/,
+    /^(package\.json|readme\.md|license|index\.js|warnings\.js|cli\.js)$/,
+    /^cli-src\/[\w.-]+\.js$/,
     /^dist\/(cjs|esm)\/([\w-]+\/)*[\w.-]+\.(js|d\.ts)$/,
     /^dist\/esm\/package\.json$/,
   ];
@@ -107,6 +108,16 @@ try {
   const bin = path.join(project, "node_modules", ".bin", "contrast");
   const ok = inProject(bin, ["#000", "#fff"]);
   check(ok.status === 0 && ok.stdout === "Ratio: 21\nScore: AAA\n" && ok.stderr === "", `contrast #000 #fff: ${JSON.stringify(ok)}`);
+  const checkRun = inProject(bin, ["check", "#767676", "white"]);
+  check(checkRun.status === 0 && checkRun.stdout.includes("Contrast ratio  4.54:1") && checkRun.stderr === "", `contrast check: ${JSON.stringify(checkRun)}`);
+  const fixed = inProject(bin, ["fix", "#777777", "#ffffff"]);
+  check(fixed.status === 0 && fixed.stdout.startsWith("Suggested #767676"), `contrast fix: ${JSON.stringify(fixed)}`);
+  const failing = inProject(bin, ["check", "#777", "#fff"]);
+  check(failing.status === 1, `contrast check (failing) should exit 1: ${JSON.stringify(failing)}`);
+  const invalid = inProject(bin, ["check", "nope", "#fff"]);
+  check(invalid.status === 2 && invalid.stdout === "" && invalid.stderr.startsWith("error: "), `contrast check (invalid) should exit 2: ${JSON.stringify(invalid)}`);
+  const version = inProject(bin, ["--version"]);
+  check(version.stdout.trim() === manifest.version, `contrast --version: ${JSON.stringify(version)}`);
   const bad = inProject(bin, ["#777"]);
   check(bad.status === 1 && bad.stdout.endsWith("The contrast is not accessible.\n"), `contrast #777: ${JSON.stringify(bad)}`);
 

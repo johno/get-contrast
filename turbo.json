@@ -9,7 +9,7 @@
         "dist/**",
         ".next/**",
         "!.next/cache/**",
-        "cli-run.js"
+        "cli-src/**"
       ]
     },
     "test": {

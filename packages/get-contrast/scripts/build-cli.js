@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const src = path.join(__dirname, "..", "..", "cli", "src", "run.js");
-const dest = path.join(__dirname, "..", "cli-run.js");
-fs.copyFileSync(src, dest);
+const src = path.join(__dirname, "..", "..", "cli", "src");
+const dest = path.join(__dirname, "..", "cli-src");
+fs.rmSync(dest, { recursive: true, force: true });
+fs.cpSync(src, dest, { recursive: true });

@@ -36,7 +36,8 @@ test("published code only imports relative modules", () => {
   const files = [
     ...sourceFiles(path.join(root, "src"), [".ts"]),
     ...sourceFiles(path.join(root, "dist"), [".js"]),
-    ...["index.js", "warnings.js", "cli.js", "cli-run.js"].map((f) => path.join(root, f)),
+    ...sourceFiles(path.join(root, "cli-src"), [".js"]),
+    ...["index.js", "warnings.js", "cli.js"].map((f) => path.join(root, f)),
   ];
   const specifier = /(?:require\(\s*|from\s+|import\(\s*)["']([^"']+)["']/g;
   const offenders = [];

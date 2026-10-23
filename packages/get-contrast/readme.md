@@ -45,14 +45,27 @@ Score: AAA
 # The second parameter defaults to #fff
 $ contrast white
 Ratio: 1
-Score: F
+Score: Fail
 The contrast is not accessible.
 # Contrast will exit with an error code, when the values are not accessible.
 $ contrast "#ff0" "#fff" && ./deploy.sh
 Ratio: 1.0738392309265699
-Score: F
+Score: Fail
 The contrast is not accessible.
 ```
+
+That `contrast <color1> [color2]` form is unchanged from v3. v4 adds explicit
+commands (`check`, `wcag`, `pick`, `find`, `fix`) with corrected alpha handling,
+modern color syntax, and exit codes for scripts:
+
+```sh
+$ contrast check "#767676" white --level AA
+$ contrast fix "#ffcc00" white          # suggests the smallest change that passes
+$ contrast pick white "#767676" "#111" "#ddd"
+```
+
+See the [CLI guide](https://github.com/johno/get-contrast/blob/main/docs/cli.md)
+and the [modern API](https://github.com/johno/get-contrast/blob/main/docs/modern-api.md).
 
 ## Related
 
